@@ -3,6 +3,29 @@ const STORAGE_KEY = "malika-room-reminder-state-v1";
 const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Cicil", "Dispensasi"];
 const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"];
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
+const roomTypeGroups = [
+  { type: "Standard", description: "Bulanan atau semesteran" },
+  { type: "Standard+", description: "Semesteran" },
+  { type: "Eksklusif", description: "Tahunan, ber-AC" },
+  { type: "Deluxe", description: "Tahunan, ber-AC" }
+];
+const routineItems = ["Listrik", "Sampah", "Gas", "Gaji karyawan", "Air galon", "Kresek sampah", "Pembersih toilet", "Sabun cuci tangan", "Cairan pel"];
+const expenseTrackingRules = [
+  {
+    item: "Gas",
+    aliases: ["gas"],
+    expectedDays: 45,
+    normalText: "Normal: habis sekitar 1,5 bulan sekali",
+    maxMonthlyPurchases: 1
+  },
+  {
+    item: "Air galon",
+    aliases: ["air galon", "air minum galon", "galon"],
+    expectedDays: 21,
+    normalText: "Normal: habis sekitar 3 minggu sekali",
+    maxMonthlyPurchases: 2
+  }
+];
 
 const baseRooms = [
   { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman" },
@@ -32,6 +55,7 @@ const roomBoard = document.querySelector("#roomBoard");
 const detailPanel = document.querySelector("#detailPanel");
 const reminderList = document.querySelector("#reminderList");
 const shoppingForm = document.querySelector("#shoppingForm");
+const expenseTracker = document.querySelector("#expenseTracker");
 const expenseList = document.querySelector("#expenseList");
 const resetDataBtn = document.querySelector("#resetDataBtn");
 const expenseDate = document.querySelector("#expenseDate");
@@ -131,6 +155,7 @@ function render() {
   renderRoomBoard();
   renderDetail();
   renderReminders();
+  renderExpenseTracker();
   renderExpenses();
   saveState();
 }
@@ -161,32 +186,52 @@ function renderSummary() {
 }
 
 function renderRoomBoard() {
-  roomBoard.innerHTML = state.rooms.map((room) => {
-    const tone = getRoomTone(room);
-    const active = room.id === selectedRoomId ? "active" : "";
-    const acText = room.hasAc ? `AC: ${room.acStatus}` : "Tanpa AC";
+  roomBoard.innerHTML = roomTypeGroups.map((group) => {
+    const rooms = state.rooms.filter((room) => room.type === group.type);
+    const attentionCount = rooms.filter((room) => getRoomTone(room) !== "safe").length;
 
     return `
-      <button class="room-card ${tone} ${active}" type="button" data-room-id="${room.id}">
-        <div class="room-topline">
+      <section class="room-group">
+        <div class="room-group-header">
           <div>
-            <div class="room-number">${room.id}</div>
-            <div class="room-type">${room.type}</div>
+            <h3>${group.type}</h3>
+            <p>${group.description}</p>
           </div>
-          <span class="status-pill"><i class="dot ${tone}"></i>${toneLabel(tone)}</span>
+          <span>${rooms.length} kamar${attentionCount ? ` · ${attentionCount} perlu cek` : ""}</span>
         </div>
-        <div class="room-meta">
-          <span>Skema: <strong>${room.scheme}</strong></span>
-          <span>Tarif: <strong>${rateLabel(room)}</strong></span>
+        <div class="room-group-grid">
+          ${rooms.map(renderRoomCard).join("")}
         </div>
-        <div class="pill-row">
-          <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
-          <span class="pill ${pillTone(room.roomStatus)}">${room.roomStatus}</span>
-          <span class="pill ${pillTone(room.acStatus)}">${acText}</span>
-        </div>
-      </button>
+      </section>
     `;
   }).join("");
+}
+
+function renderRoomCard(room) {
+  const tone = getRoomTone(room);
+  const active = room.id === selectedRoomId ? "active" : "";
+  const acText = room.hasAc ? `AC: ${room.acStatus}` : "Tanpa AC";
+
+  return `
+    <button class="room-card ${tone} ${active}" type="button" data-room-id="${room.id}">
+      <div class="room-topline">
+        <div>
+          <div class="room-number">${room.id}</div>
+          <div class="room-type">${room.type}</div>
+        </div>
+        <span class="status-pill"><i class="dot ${tone}"></i>${toneLabel(tone)}</span>
+      </div>
+      <div class="room-meta">
+        <span>Skema: <strong>${room.scheme}</strong></span>
+        <span>Tarif: <strong>${rateLabel(room)}</strong></span>
+      </div>
+      <div class="pill-row">
+        <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
+        <span class="pill ${pillTone(room.roomStatus)}">${room.roomStatus}</span>
+        <span class="pill ${pillTone(room.acStatus)}">${acText}</span>
+      </div>
+    </button>
+  `;
 }
 
 function toneLabel(tone) {
@@ -349,7 +394,6 @@ function buildReminders() {
     }
   });
 
-  const routineItems = ["Listrik", "Sampah", "Gas", "Air galon", "Kresek sampah", "Pembersih toilet", "Sabun cuci tangan", "Cairan pel"];
   const boughtItems = currentMonthExpenses().map((expense) => expense.item.toLowerCase());
   const missingRoutine = routineItems.filter((item) => !boughtItems.includes(item.toLowerCase()));
 
@@ -361,6 +405,17 @@ function buildReminders() {
       description: `Belum tercatat bulan ini: ${missingRoutine.slice(0, 4).join(", ")}${missingRoutine.length > 4 ? ", ..." : ""}.`
     });
   }
+
+  getExpenseTracking().forEach((tracking) => {
+    if (tracking.tone === "danger") {
+      reminders.push({
+        category: "Belanja",
+        priority: "Sedang",
+        title: `${tracking.item} terlalu sering dibeli`,
+        description: `${tracking.currentMonthCount} pembelian bulan ini. ${tracking.normalText}.`
+      });
+    }
+  });
 
   const rank = { Tinggi: 1, Sedang: 2, Rendah: 3 };
   return reminders.sort((a, b) => rank[a.priority] - rank[b.priority]);
@@ -386,6 +441,77 @@ function renderExpenses() {
       <div class="expense-amount">${formatCurrency(Number(expense.amount))}</div>
     </article>
   `).join("") : `<div class="empty-state">Belum ada belanja tercatat.</div>`;
+}
+
+function renderExpenseTracker() {
+  const tracking = getExpenseTracking();
+
+  expenseTracker.innerHTML = `
+    <div class="tracker-heading">
+      <div>
+        <h3>Tracking Pembelian Rutin</h3>
+        <p>Pakai ini untuk kontrol item yang kalau makin sering dibeli berarti makin boros.</p>
+      </div>
+    </div>
+    <div class="tracker-grid">
+      ${tracking.map((item) => `
+        <article class="tracker-card ${item.tone}">
+          <div class="tracker-card-top">
+            <strong>${item.item}</strong>
+            <span class="priority">${item.status}</span>
+          </div>
+          <div class="tracker-stat">
+            <span>${item.currentMonthCount}</span>
+            <small>pembelian bulan ini</small>
+          </div>
+          <p>${item.normalText}</p>
+          <small>${item.lastPurchaseText} · ${item.averageText}</small>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function getExpenseTracking() {
+  return expenseTrackingRules.map((rule) => {
+    const purchases = state.expenses
+      .filter((expense) => matchesExpenseRule(expense.item, rule))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const monthPurchases = currentMonthExpenses().filter((expense) => matchesExpenseRule(expense.item, rule));
+    const intervals = purchases.slice(1).map((purchase, index) => {
+      return daysBetween(purchases[index].date, purchase.date);
+    });
+    const averageInterval = intervals.length
+      ? Math.round(intervals.reduce((total, days) => total + days, 0) / intervals.length)
+      : null;
+    const lastPurchase = purchases[purchases.length - 1];
+    const daysSinceLast = lastPurchase ? daysBetween(lastPurchase.date, new Date().toISOString().slice(0, 10)) : null;
+    const tooFrequent = monthPurchases.length > rule.maxMonthlyPurchases || (averageInterval !== null && averageInterval < rule.expectedDays * 0.8);
+    const overdue = daysSinceLast !== null && daysSinceLast > rule.expectedDays;
+    const tone = tooFrequent ? "danger" : overdue ? "warning" : "safe";
+    const status = tooFrequent ? "Boros" : overdue ? "Cek Stok" : "Normal";
+
+    return {
+      item: rule.item,
+      normalText: rule.normalText,
+      currentMonthCount: monthPurchases.length,
+      averageText: averageInterval ? `Rata-rata ${averageInterval} hari sekali` : "Rata-rata belum cukup data",
+      lastPurchaseText: lastPurchase ? `Terakhir ${daysSinceLast} hari lalu` : "Belum ada pembelian tercatat",
+      status,
+      tone
+    };
+  });
+}
+
+function matchesExpenseRule(item, rule) {
+  const normalizedItem = item.toLowerCase().trim();
+  return rule.aliases.some((alias) => normalizedItem.includes(alias));
+}
+
+function daysBetween(startDate, endDate) {
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  return Math.max(0, Math.round((end - start) / 86400000));
 }
 
 function formatDate(dateValue) {

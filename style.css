@@ -248,6 +248,47 @@ h3 {
 
 .room-board {
   display: grid;
+  gap: 16px;
+}
+
+.room-group {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f9fbfd;
+}
+
+.room-group-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.room-group-header h3 {
+  margin: 0 0 3px;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.room-group-header p,
+.tracker-heading p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.room-group-header span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.room-group-grid {
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
   gap: 12px;
 }
@@ -562,6 +603,86 @@ textarea:focus {
   margin-bottom: 14px;
 }
 
+.expense-tracker {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tracker-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-heading h3 {
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.tracker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tracker-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--safe);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.tracker-card.safe {
+  border-left-color: var(--safe);
+}
+
+.tracker-card.warning {
+  border-left-color: var(--warning);
+}
+
+.tracker-card.danger {
+  border-left-color: var(--danger);
+}
+
+.tracker-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tracker-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tracker-stat span {
+  color: var(--ink);
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.tracker-card p {
+  margin-bottom: 0;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.tracker-card small,
+.tracker-stat small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .expense-item {
   display: flex;
   align-items: center;
@@ -635,9 +756,10 @@ textarea:focus {
   }
 
   .summary-grid,
-  .room-board,
+  .room-group-grid,
   .detail-grid,
-  .shopping-form {
+  .shopping-form,
+  .tracker-grid {
     grid-template-columns: 1fr;
   }
 
@@ -650,7 +772,9 @@ textarea:focus {
   }
 
   .expense-item,
-  .reminder-title {
+  .reminder-title,
+  .room-group-header,
+  .tracker-card-top {
     align-items: flex-start;
     flex-direction: column;
   }
