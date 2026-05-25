@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malika Room Reminder Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Kost Malika</p>
+        <h1>Room Reminder Dashboard</h1>
+      </div>
+      <div class="top-actions">
+        <button class="ghost-button" id="resetDataBtn" type="button">Reset Data</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="summary-grid" id="summaryGrid" aria-label="Ringkasan operasional"></section>
+
+      <section class="workspace-grid">
+        <div class="main-column">
+          <section class="section-block">
+            <div class="section-heading">
+              <div>
+                <h2>Room Board</h2>
+                <p>17 kamar aktif dengan status operasional harian.</p>
+              </div>
+              <div class="legend" aria-label="Legenda status kartu">
+                <span><i class="dot safe"></i>Aman</span>
+                <span><i class="dot warning"></i>Perhatian</span>
+                <span><i class="dot danger"></i>Telat</span>
+                <span><i class="dot project"></i>Proyek</span>
+                <span><i class="dot empty"></i>Kosong</span>
+              </div>
+            </div>
+            <div class="room-board" id="roomBoard"></div>
+          </section>
+
+          <section class="section-block shopping-section">
+            <div class="section-heading">
+              <div>
+                <h2>Belanja Bulanan</h2>
+                <p>Catat kebutuhan rutin kost dan biaya bulan berjalan.</p>
+              </div>
+            </div>
+            <form class="shopping-form" id="shoppingForm">
+              <label>
+                Kategori
+                <select id="expenseCategory" required>
+                  <option value="Operasional">Operasional</option>
+                  <option value="Kebersihan">Kebersihan</option>
+                  <option value="Utilitas">Utilitas</option>
+                  <option value="Perbaikan">Perbaikan</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </label>
+              <label>
+                Item
+                <input id="expenseItem" list="routineItems" placeholder="Pilih atau ketik item" required>
+                <datalist id="routineItems">
+                  <option value="Listrik"></option>
+                  <option value="Sampah"></option>
+                  <option value="Gas"></option>
+                  <option value="Air galon"></option>
+                  <option value="Kresek sampah"></option>
+                  <option value="Pembersih toilet"></option>
+                  <option value="Sabun cuci tangan"></option>
+                  <option value="Cairan pel"></option>
+                </datalist>
+              </label>
+              <label>
+                Nominal
+                <input id="expenseAmount" type="number" min="0" step="1000" placeholder="0" required>
+              </label>
+              <label>
+                Tanggal
+                <input id="expenseDate" type="date" required>
+              </label>
+              <button class="primary-button" type="submit">Tambah</button>
+            </form>
+            <div class="expense-list" id="expenseList"></div>
+          </section>
+        </div>
+
+        <aside class="side-column">
+          <section class="detail-panel section-block" id="detailPanel">
+            <div class="empty-detail">
+              <span class="empty-icon">⌂</span>
+              <h2>Pilih kamar</h2>
+              <p>Klik salah satu kartu kamar untuk melihat detail, mengubah status, dan menambahkan catatan.</p>
+            </div>
+          </section>
+
+          <section class="section-block">
+            <div class="section-heading compact">
+              <div>
+                <h2>Reminder Prioritas</h2>
+                <p>Auto-generate dari status kamar dan belanja.</p>
+              </div>
+            </div>
+            <div class="reminder-list" id="reminderList"></div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
