@@ -38,22 +38,22 @@ const expenseTrackingRules = [
 
 const baseRooms = [
   { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Telat", roomStatus: "Normal", acStatus: "Perlu Service", residentName: "" },
-  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Belum Bayar", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Cicil", roomStatus: "Normal", acStatus: "Service Terjadwal", residentName: "" },
+  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
   { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Dispensasi", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Maintenance Ringan", acStatus: "Aman", residentName: "" },
+  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
   { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Upgrade", acStatus: "Aman", residentName: "" },
+  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
   { id: "A6", type: "Standard+", scheme: "Semesteran", rate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "A8", type: "Standard+", scheme: "Semesteran", rate: 6000000, hasAc: false, paymentStatus: "Belum Bayar", roomStatus: "Normal", residentName: "" },
+  { id: "A8", type: "Standard+", scheme: "Semesteran", rate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
   { id: "A2", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "A3", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Cicil", roomStatus: "Normal", residentName: "" },
-  { id: "A7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Kosong", residentName: "" },
-  { id: "B7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Renovasi", residentName: "" },
-  { id: "B8", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Telat", roomStatus: "Normal", residentName: "" },
-  { id: "B9", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Dispensasi", roomStatus: "Normal", residentName: "" }
+  { id: "A3", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
+  { id: "A7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
+  { id: "B7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
+  { id: "B8", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
+  { id: "B9", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" }
 ];
 
 let state = loadState();
@@ -305,12 +305,7 @@ async function saveRemoteState() {
 }
 
 function seedExpenses(monthKey = defaultMonthKey) {
-  const [year, month] = monthKey.split("-");
-
-  return [
-    { id: crypto.randomUUID(), category: "Utilitas", item: "Listrik", amount: 450000, date: `${year}-${month}-05` },
-    { id: crypto.randomUUID(), category: "Kebersihan", item: "Kresek sampah", amount: 35000, date: `${year}-${month}-08` }
-  ];
+  return [];
 }
 
 function formatCurrency(value) {
