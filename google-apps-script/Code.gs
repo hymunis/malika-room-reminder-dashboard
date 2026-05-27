@@ -60,7 +60,7 @@ function saveState_(state) {
 }
 
 function syncReadableTabs_(state) {
-  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Check-in", "Tanggal Bayar", "Check-out", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
+  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Tanggal Bayar", "Check-in", "Check-out", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
   const bookingRows = [["Bulan", "Kamar", "Nama Calon Penghuni", "Status Pembayaran", "DP", "DP Paid", "Payment 1", "Payment 1 Paid", "Payment 2", "Payment 2 Paid", "Total Tagihan", "Total Terbayar", "Rencana Check-in", "Catatan Booking", "ID"]];
   const expenseRows = [["Bulan", "Tanggal", "Kategori", "Item", "Nominal", "ID"]];
 
@@ -74,8 +74,8 @@ function syncReadableTabs_(state) {
         room.type || "",
         room.rentScheme || room.scheme || "",
         room.residentName || "",
+        getPaymentDueDate_(room),
         room.checkInDate || "",
-        getPaymentDueDate_(room, monthKey),
         room.checkOutDate || "",
         room.paymentStatus || "",
         room.roomStatus || "",
@@ -128,17 +128,8 @@ function syncReadableTabs_(state) {
   writeRows_(EXPENSES_SHEET_NAME, expenseRows);
 }
 
-function getPaymentDueDate_(room, monthKey) {
-  if (room.paymentDueDate) return room.paymentDueDate;
-  if (!room.checkInDate) return "";
-
-  const checkIn = new Date(room.checkInDate + "T00:00:00");
-  const parts = monthKey.split("-");
-  const year = Number(parts[0]);
-  const month = Number(parts[1]);
-  const lastDay = new Date(year, month, 0).getDate();
-  const dueDay = Math.min(checkIn.getDate(), lastDay);
-  return Utilities.formatDate(new Date(year, month - 1, dueDay), Session.getScriptTimeZone(), "yyyy-MM-dd");
+function getPaymentDueDate_(room) {
+  return room.paymentDueDate || "";
 }
 
 function writeRows_(sheetName, rows) {

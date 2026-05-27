@@ -272,7 +272,7 @@ function createCarriedMonthData(monthKey) {
 
   const previousData = state.monthlyData[previousKey];
   return {
-    rooms: (previousData.rooms || []).map((room) => ({ ...room, notes: [...(room.notes || [])] })),
+    rooms: (previousData.rooms || []).map((room) => ({ ...room, paymentDueDate: "", notes: [...(room.notes || [])] })),
     bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
     expenses: []
   };
@@ -610,13 +610,13 @@ function renderDetail() {
       </label>
 
       <label>
-        Tanggal check-in
-        <input data-action="check-in-date" type="date" value="${room.checkInDate || ""}">
+        Tanggal Bayar
+        <input data-action="payment-due-date" type="date" value="${getPaymentDueDate(room) || ""}">
       </label>
 
       <label>
-        Tanggal Bayar
-        <input data-action="payment-due-date" type="date" value="${getPaymentDueDate(room) || ""}">
+        Tanggal check-in
+        <input data-action="check-in-date" type="date" value="${room.checkInDate || ""}">
       </label>
 
       <label>
@@ -986,18 +986,8 @@ function compactDate(dateValue) {
   }).format(new Date(`${dateValue}T00:00:00`));
 }
 
-function selectedPeriodDate() {
-  return new Date(`${monthSelect.value || defaultMonthKey}-01T00:00:00`);
-}
-
 function getPaymentDueDate(room) {
-  if (room.paymentDueDate) return room.paymentDueDate;
-  if (!room.checkInDate) return "";
-  const checkIn = new Date(`${room.checkInDate}T00:00:00`);
-  const period = selectedPeriodDate();
-  const lastDay = new Date(period.getFullYear(), period.getMonth() + 1, 0).getDate();
-  const dueDay = Math.min(checkIn.getDate(), lastDay);
-  return localDateString(new Date(period.getFullYear(), period.getMonth(), dueDay));
+  return room.paymentDueDate || "";
 }
 
 function getBookingTotalAmount(booking) {
