@@ -1,6 +1,6 @@
 const STORAGE_KEY = "malika-room-reminder-state-v1";
 // Paste Google Apps Script Web App /exec URL here after deployment.
-const GOOGLE_SHEET_API_URL = "";
+const GOOGLE_SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxFY3KuxhQkNqiCjzi4boqJnpeftt-IjHhfStiie5fOtmi2mXc2AZnBfU0hHOaqsbg8dw/exec";
 
 const monthNames = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
