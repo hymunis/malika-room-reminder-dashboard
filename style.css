@@ -93,6 +93,21 @@ h3 {
   gap: 10px;
 }
 
+.period-control {
+  min-width: 178px;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.period-control select {
+  min-height: 40px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: none;
+}
+
 .primary-button,
 .ghost-button,
 .small-button {
@@ -256,8 +271,29 @@ h3 {
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--line);
+  border-left: 6px solid #7c8795;
   border-radius: 8px;
   background: #f9fbfd;
+}
+
+.room-group.standard {
+  border-left-color: #3f8f74;
+  background: linear-gradient(135deg, #f5fbf8, #ffffff 58%);
+}
+
+.room-group.standard-plus {
+  border-left-color: #d08b2e;
+  background: linear-gradient(135deg, #fff8ec, #ffffff 58%);
+}
+
+.room-group.exclusive {
+  border-left-color: #5367d8;
+  background: linear-gradient(135deg, #f0f3ff, #ffffff 58%);
+}
+
+.room-group.deluxe {
+  border-left-color: #9b5f2e;
+  background: linear-gradient(135deg, #fff3e8, #ffffff 58%);
 }
 
 .room-group-header {
@@ -271,6 +307,22 @@ h3 {
   margin: 0 0 3px;
   color: var(--ink);
   font-size: 1rem;
+}
+
+.room-group.standard .room-group-header h3 {
+  color: #22664d;
+}
+
+.room-group.standard-plus .room-group-header h3 {
+  color: #935d15;
+}
+
+.room-group.exclusive .room-group-header h3 {
+  color: #3749a8;
+}
+
+.room-group.deluxe .room-group-header h3 {
+  color: #71431f;
 }
 
 .room-group-header p,
@@ -729,6 +781,11 @@ textarea:focus {
 
   .topbar,
   .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .top-actions {
     align-items: stretch;
     flex-direction: column;
   }

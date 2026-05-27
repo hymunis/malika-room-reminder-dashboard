@@ -1,13 +1,20 @@
 const STORAGE_KEY = "malika-room-reminder-state-v1";
 
+const monthNames = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+const now = new Date();
+const trackingYear = now.getFullYear();
+const defaultMonthKey = `${trackingYear}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Cicil", "Dispensasi"];
 const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"];
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
 const roomTypeGroups = [
-  { type: "Standard", description: "Bulanan atau semesteran" },
-  { type: "Standard+", description: "Semesteran" },
-  { type: "Eksklusif", description: "Tahunan, ber-AC" },
-  { type: "Deluxe", description: "Tahunan, ber-AC" }
+  { type: "Standard", description: "Bulanan atau semesteran", tone: "standard" },
+  { type: "Standard+", description: "Semesteran", tone: "standard-plus" },
+  { type: "Eksklusif", description: "Tahunan, ber-AC", tone: "exclusive" },
+  { type: "Deluxe", description: "Tahunan, ber-AC", tone: "deluxe" }
 ];
 const routineItems = ["Listrik", "Sampah", "Gas", "Gaji karyawan", "Air galon", "Kresek sampah", "Pembersih toilet", "Sabun cuci tangan", "Cairan pel"];
 const expenseTrackingRules = [
@@ -28,23 +35,23 @@ const expenseTrackingRules = [
 ];
 
 const baseRooms = [
-  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman" },
-  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Telat", roomStatus: "Normal", acStatus: "Perlu Service" },
-  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Belum Bayar", roomStatus: "Normal", acStatus: "Aman" },
-  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Cicil", roomStatus: "Normal", acStatus: "Service Terjadwal" },
-  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman" },
-  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Dispensasi", roomStatus: "Normal", acStatus: "Aman" },
-  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Maintenance Ringan", acStatus: "Aman" },
-  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman" },
-  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Upgrade", acStatus: "Aman" },
-  { id: "A6", type: "Standard+", scheme: "Semesteran", rate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal" },
-  { id: "A8", type: "Standard+", scheme: "Semesteran", rate: 6000000, hasAc: false, paymentStatus: "Belum Bayar", roomStatus: "Normal" },
-  { id: "A2", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal" },
-  { id: "A3", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Cicil", roomStatus: "Normal" },
-  { id: "A7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Kosong" },
-  { id: "B7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Renovasi" },
-  { id: "B8", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Telat", roomStatus: "Normal" },
-  { id: "B9", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Dispensasi", roomStatus: "Normal" }
+  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Telat", roomStatus: "Normal", acStatus: "Perlu Service", residentName: "" },
+  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Belum Bayar", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Cicil", roomStatus: "Normal", acStatus: "Service Terjadwal", residentName: "" },
+  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Dispensasi", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Maintenance Ringan", acStatus: "Aman", residentName: "" },
+  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
+  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Upgrade", acStatus: "Aman", residentName: "" },
+  { id: "A6", type: "Standard+", scheme: "Semesteran", rate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
+  { id: "A8", type: "Standard+", scheme: "Semesteran", rate: 6000000, hasAc: false, paymentStatus: "Belum Bayar", roomStatus: "Normal", residentName: "" },
+  { id: "A2", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
+  { id: "A3", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Cicil", roomStatus: "Normal", residentName: "" },
+  { id: "A7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Kosong", residentName: "" },
+  { id: "B7", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Renovasi", residentName: "" },
+  { id: "B8", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Telat", roomStatus: "Normal", residentName: "" },
+  { id: "B9", type: "Standard", scheme: "Bulanan / Semesteran", rate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Dispensasi", roomStatus: "Normal", residentName: "" }
 ];
 
 let state = loadState();
@@ -59,28 +66,56 @@ const expenseTracker = document.querySelector("#expenseTracker");
 const expenseList = document.querySelector("#expenseList");
 const resetDataBtn = document.querySelector("#resetDataBtn");
 const expenseDate = document.querySelector("#expenseDate");
+const monthSelect = document.querySelector("#monthSelect");
 
-expenseDate.value = new Date().toISOString().slice(0, 10);
+monthSelect.innerHTML = monthNames.map((month, index) => {
+  const monthKey = `${trackingYear}-${String(index + 1).padStart(2, "0")}`;
+  return `<option value="${monthKey}">${month} ${trackingYear}</option>`;
+}).join("");
+monthSelect.value = state.selectedMonth || defaultMonthKey;
+updateExpenseDateForMonth();
 
 function loadState() {
   const fallback = {
-    rooms: baseRooms.map((room) => ({ ...room, notes: [] })),
-    expenses: seedExpenses(),
+    monthlyData: {
+      [defaultMonthKey]: createMonthData(defaultMonthKey, true)
+    },
+    selectedMonth: defaultMonthKey,
     selectedRoomId: "A4"
   };
 
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!stored || !Array.isArray(stored.rooms)) return fallback;
+    if (!stored) return fallback;
 
-    return {
-      rooms: baseRooms.map((baseRoom) => {
-        const savedRoom = stored.rooms.find((room) => room.id === baseRoom.id) || {};
-        return { ...baseRoom, ...savedRoom, notes: savedRoom.notes || [] };
-      }),
-      expenses: Array.isArray(stored.expenses) ? stored.expenses : fallback.expenses,
-      selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
-    };
+    if (stored.monthlyData) {
+      const monthlyData = {};
+      monthKeys().forEach((monthKey) => {
+        const savedMonth = stored.monthlyData[monthKey] || createMonthData(monthKey, false);
+        monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey);
+      });
+
+      return {
+        monthlyData,
+        selectedMonth: stored.selectedMonth || defaultMonthKey,
+        selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
+      };
+    }
+
+    if (Array.isArray(stored.rooms)) {
+      return {
+        monthlyData: {
+          [defaultMonthKey]: normalizeMonthData({
+            rooms: stored.rooms,
+            expenses: Array.isArray(stored.expenses) ? stored.expenses : seedExpenses(defaultMonthKey)
+          }, defaultMonthKey)
+        },
+        selectedMonth: defaultMonthKey,
+        selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
+      };
+    }
+
+    return fallback;
   } catch {
     return fallback;
   }
@@ -88,13 +123,72 @@ function loadState() {
 
 function saveState() {
   state.selectedRoomId = selectedRoomId;
+  state.selectedMonth = monthSelect.value;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function seedExpenses() {
-  const today = new Date();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const year = today.getFullYear();
+function createMonthData(monthKey, withSeedExpenses = false) {
+  return {
+    rooms: baseRooms.map((room) => ({ ...room, notes: [] })),
+    expenses: withSeedExpenses ? seedExpenses(monthKey) : []
+  };
+}
+
+function normalizeMonthData(monthData, monthKey) {
+  return {
+    rooms: baseRooms.map((baseRoom) => {
+      const savedRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
+      return { ...baseRoom, ...savedRoom, residentName: savedRoom.residentName || "", notes: savedRoom.notes || [] };
+    }),
+    expenses: Array.isArray(monthData.expenses) ? monthData.expenses : seedExpenses(monthKey)
+  };
+}
+
+function monthKeys() {
+  return monthNames.map((_, index) => `${trackingYear}-${String(index + 1).padStart(2, "0")}`);
+}
+
+function activeMonthData() {
+  const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
+  if (!state.monthlyData[monthKey]) {
+    state.monthlyData[monthKey] = createMonthData(monthKey, false);
+  }
+  return state.monthlyData[monthKey];
+}
+
+function selectedMonthName() {
+  const monthIndex = Number((monthSelect.value || defaultMonthKey).slice(5, 7)) - 1;
+  return monthNames[monthIndex];
+}
+
+function defaultExpenseDate() {
+  const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
+  if (monthKey === defaultMonthKey) return localDateString(new Date());
+  return `${monthKey}-01`;
+}
+
+function selectedMonthEndDate() {
+  const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
+  const [year, month] = monthKey.split("-").map(Number);
+  return localDateString(new Date(year, month, 0));
+}
+
+function updateExpenseDateForMonth() {
+  const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
+  expenseDate.min = `${monthKey}-01`;
+  expenseDate.max = selectedMonthEndDate();
+  expenseDate.value = defaultExpenseDate();
+}
+
+function localDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function seedExpenses(monthKey = defaultMonthKey) {
+  const [year, month] = monthKey.split("-");
 
   return [
     { id: crypto.randomUUID(), category: "Utilitas", item: "Listrik", amount: 450000, date: `${year}-${month}-05` },
@@ -119,10 +213,13 @@ function rateLabel(room) {
 }
 
 function currentMonthExpenses() {
-  const now = new Date();
-  return state.expenses.filter((expense) => {
-    const date = new Date(`${expense.date}T00:00:00`);
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  return activeMonthData().expenses;
+}
+
+function allTrackedYearExpenses() {
+  return monthKeys().flatMap((monthKey) => {
+    const monthData = state.monthlyData[monthKey];
+    return monthData ? monthData.expenses : [];
   });
 }
 
@@ -161,19 +258,20 @@ function render() {
 }
 
 function renderSummary() {
-  const paymentFollowUp = state.rooms.filter((room) => ["Belum Bayar", "Telat", "Dispensasi"].includes(room.paymentStatus)).length;
-  const installments = state.rooms.filter((room) => room.paymentStatus === "Cicil").length;
-  const acService = state.rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus)).length;
-  const projects = state.rooms.filter((room) => ["Renovasi", "Upgrade", "Maintenance Ringan"].includes(room.roomStatus)).length;
+  const rooms = activeMonthData().rooms;
+  const paymentFollowUp = rooms.filter((room) => ["Belum Bayar", "Telat", "Dispensasi"].includes(room.paymentStatus)).length;
+  const installments = rooms.filter((room) => room.paymentStatus === "Cicil").length;
+  const acService = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus)).length;
+  const projects = rooms.filter((room) => ["Renovasi", "Upgrade", "Maintenance Ringan"].includes(room.roomStatus)).length;
   const expensesTotal = currentMonthExpenses().reduce((total, expense) => total + Number(expense.amount), 0);
 
   const cards = [
-    { label: "Total kamar", value: state.rooms.length, hint: "Kamar terdaftar" },
+    { label: "Total kamar", value: rooms.length, hint: `Periode ${selectedMonthName()}` },
     { label: "Pembayaran perlu follow-up", value: paymentFollowUp, hint: "Belum bayar, telat, dispensasi" },
     { label: "Cicilan aktif", value: installments, hint: "Perlu pantau jadwal cicil" },
     { label: "AC perlu service", value: acService, hint: "Hanya kamar Deluxe & Eksklusif" },
     { label: "Kamar renovasi/upgrade", value: projects, hint: "Termasuk maintenance ringan" },
-    { label: "Belanja bulan ini", value: formatCurrency(expensesTotal), hint: `${currentMonthExpenses().length} transaksi` }
+      { label: "Belanja periode ini", value: formatCurrency(expensesTotal), hint: `${currentMonthExpenses().length} transaksi ${selectedMonthName()}` }
   ];
 
   summaryGrid.innerHTML = cards.map((card) => `
@@ -187,11 +285,11 @@ function renderSummary() {
 
 function renderRoomBoard() {
   roomBoard.innerHTML = roomTypeGroups.map((group) => {
-    const rooms = state.rooms.filter((room) => room.type === group.type);
+    const rooms = activeMonthData().rooms.filter((room) => room.type === group.type);
     const attentionCount = rooms.filter((room) => getRoomTone(room) !== "safe").length;
 
     return `
-      <section class="room-group">
+      <section class="room-group ${group.tone}">
         <div class="room-group-header">
           <div>
             <h3>${group.type}</h3>
@@ -222,6 +320,7 @@ function renderRoomCard(room) {
         <span class="status-pill"><i class="dot ${tone}"></i>${toneLabel(tone)}</span>
       </div>
       <div class="room-meta">
+        <span>Penghuni: <strong>${room.residentName ? escapeHtml(room.residentName) : "Belum diisi"}</strong></span>
         <span>Skema: <strong>${room.scheme}</strong></span>
         <span>Tarif: <strong>${rateLabel(room)}</strong></span>
       </div>
@@ -246,7 +345,7 @@ function toneLabel(tone) {
 }
 
 function renderDetail() {
-  const room = state.rooms.find((item) => item.id === selectedRoomId);
+  const room = activeMonthData().rooms.find((item) => item.id === selectedRoomId);
   if (!room) return;
 
   detailPanel.innerHTML = `
@@ -259,6 +358,10 @@ function renderDetail() {
     </div>
 
     <div class="detail-grid">
+      <div class="info-tile">
+        <span>Penghuni</span>
+        <strong>${room.residentName ? escapeHtml(room.residentName) : "Belum diisi"}</strong>
+      </div>
       <div class="info-tile">
         <span>Tarif</span>
         <strong>${rateLabel(room)}</strong>
@@ -278,6 +381,11 @@ function renderDetail() {
     </div>
 
     <div class="control-grid">
+      <label>
+        Nama penghuni
+        <input data-action="resident-name" value="${escapeHtml(room.residentName || "")}" placeholder="Contoh: Ibu Sari / Pak Budi">
+      </label>
+
       <label>
         Update pembayaran
         <select data-action="payment">
@@ -338,7 +446,7 @@ function renderReminders() {
 function buildReminders() {
   const reminders = [];
 
-  state.rooms.forEach((room) => {
+  activeMonthData().rooms.forEach((room) => {
     if (room.paymentStatus === "Telat") {
       reminders.push({
         category: "Pembayaran",
@@ -430,7 +538,7 @@ function priorityClass(priority) {
 }
 
 function renderExpenses() {
-  const expenses = [...state.expenses].sort((a, b) => b.date.localeCompare(a.date));
+  const expenses = [...activeMonthData().expenses].sort((a, b) => b.date.localeCompare(a.date));
 
   expenseList.innerHTML = expenses.length ? expenses.map((expense) => `
     <article class="expense-item">
@@ -474,7 +582,7 @@ function renderExpenseTracker() {
 
 function getExpenseTracking() {
   return expenseTrackingRules.map((rule) => {
-    const purchases = state.expenses
+    const purchases = allTrackedYearExpenses()
       .filter((expense) => matchesExpenseRule(expense.item, rule))
       .sort((a, b) => a.date.localeCompare(b.date));
     const monthPurchases = currentMonthExpenses().filter((expense) => matchesExpenseRule(expense.item, rule));
@@ -485,7 +593,7 @@ function getExpenseTracking() {
       ? Math.round(intervals.reduce((total, days) => total + days, 0) / intervals.length)
       : null;
     const lastPurchase = purchases[purchases.length - 1];
-    const daysSinceLast = lastPurchase ? daysBetween(lastPurchase.date, new Date().toISOString().slice(0, 10)) : null;
+    const daysSinceLast = lastPurchase ? daysBetween(lastPurchase.date, selectedMonthEndDate()) : null;
     const tooFrequent = monthPurchases.length > rule.maxMonthlyPurchases || (averageInterval !== null && averageInterval < rule.expectedDays * 0.8);
     const overdue = daysSinceLast !== null && daysSinceLast > rule.expectedDays;
     const tone = tooFrequent ? "danger" : overdue ? "warning" : "safe";
@@ -523,7 +631,8 @@ function formatDate(dateValue) {
 }
 
 function updateSelectedRoom(updater) {
-  state.rooms = state.rooms.map((room) => {
+  const monthData = activeMonthData();
+  monthData.rooms = monthData.rooms.map((room) => {
     if (room.id !== selectedRoomId) return room;
     return updater(room);
   });
@@ -553,6 +662,7 @@ detailPanel.addEventListener("change", (event) => {
 
   updateSelectedRoom((room) => {
     const updated = { ...room };
+    if (action === "resident-name") updated.residentName = event.target.value.trim();
     if (action === "payment") updated.paymentStatus = event.target.value;
     if (action === "room-status") updated.roomStatus = event.target.value;
     if (action === "ac-status") updated.acStatus = event.target.value;
@@ -570,7 +680,7 @@ detailPanel.addEventListener("click", (event) => {
   updateSelectedRoom((room) => ({
     ...room,
     notes: [
-      { text, date: formatDate(new Date().toISOString().slice(0, 10)) },
+      { text, date: formatDate(defaultExpenseDate()) },
       ...(room.notes || [])
     ]
   }));
@@ -589,9 +699,16 @@ shoppingForm.addEventListener("submit", (event) => {
 
   if (!formData.item || !formData.amount || !formData.date) return;
 
-  state.expenses = [formData, ...state.expenses];
+  activeMonthData().expenses = [formData, ...activeMonthData().expenses];
   shoppingForm.reset();
-  expenseDate.value = new Date().toISOString().slice(0, 10);
+  updateExpenseDateForMonth();
+  render();
+});
+
+monthSelect.addEventListener("change", () => {
+  state.selectedMonth = monthSelect.value;
+  activeMonthData();
+  updateExpenseDateForMonth();
   render();
 });
 
@@ -602,6 +719,8 @@ resetDataBtn.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
   state = loadState();
   selectedRoomId = state.selectedRoomId;
+  monthSelect.value = state.selectedMonth;
+  updateExpenseDateForMonth();
   render();
 });
 
