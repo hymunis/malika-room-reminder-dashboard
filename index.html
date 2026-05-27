@@ -76,13 +76,25 @@
                 DP
                 <input id="bookingDpAmount" type="number" min="0" step="1000" placeholder="0">
               </label>
+              <label class="checkbox-field">
+                <input id="bookingDpPaid" type="checkbox">
+                DP sudah dibayar
+              </label>
+              <label>
+                Payment 1
+                <input id="bookingPayment1Amount" type="number" min="0" step="1000" placeholder="0">
+              </label>
+              <label class="checkbox-field">
+                <input id="bookingPayment1Paid" type="checkbox">
+                Payment 1 sudah dibayar
+              </label>
               <label>
                 Payment 2
                 <input id="bookingPayment2Amount" type="number" min="0" step="1000" placeholder="0">
               </label>
-              <label>
-                Payment 3
-                <input id="bookingPayment3Amount" type="number" min="0" step="1000" placeholder="0">
+              <label class="checkbox-field">
+                <input id="bookingPayment2Paid" type="checkbox">
+                Payment 2 sudah dibayar
               </label>
               <label>
                 Rencana check-in
@@ -92,7 +104,10 @@
                 Catatan booking
                 <textarea id="bookingNote" placeholder="Contoh: masuk setelah kamar kosong, sudah DP, follow-up pelunasan."></textarea>
               </label>
-              <button class="primary-button" type="submit">Tambah Booking</button>
+              <div class="booking-form-actions">
+                <button class="primary-button" id="bookingSubmitBtn" type="submit">Tambah Booking</button>
+                <button class="small-button" id="bookingCancelEditBtn" type="button" hidden>Batal Edit</button>
+              </div>
             </form>
             <div class="booking-list" id="bookingList"></div>
           </section>

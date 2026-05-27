@@ -64,6 +64,7 @@ let selectedRoomId = state.selectedRoomId || "A4";
 let remoteReady = !GOOGLE_SHEET_API_URL;
 let isApplyingRemoteState = false;
 let syncTimer;
+let editingBookingId = null;
 
 const summaryGrid = document.querySelector("#summaryGrid");
 const roomBoard = document.querySelector("#roomBoard");
@@ -72,6 +73,8 @@ const reminderList = document.querySelector("#reminderList");
 const bookingForm = document.querySelector("#bookingForm");
 const bookingRoomId = document.querySelector("#bookingRoomId");
 const bookingPlannedCheckIn = document.querySelector("#bookingPlannedCheckIn");
+const bookingSubmitBtn = document.querySelector("#bookingSubmitBtn");
+const bookingCancelEditBtn = document.querySelector("#bookingCancelEditBtn");
 const bookingList = document.querySelector("#bookingList");
 const shoppingForm = document.querySelector("#shoppingForm");
 const expenseTracker = document.querySelector("#expenseTracker");
@@ -183,6 +186,7 @@ function normalizeMonthData(monthData, monthKey) {
         rentScheme: roomData.rentScheme || baseRoom.rentScheme || baseRoom.scheme,
         residentName: roomData.residentName || "",
         checkInDate: roomData.checkInDate || "",
+        paymentDueDate: roomData.paymentDueDate || "",
         checkOutDate: roomData.checkOutDate || "",
         notes: roomData.notes || []
       };
@@ -199,8 +203,11 @@ function normalizeBooking(booking) {
     prospectName: booking.prospectName || booking.bookingName || "",
     paymentStatus: booking.paymentStatus || "Cicil",
     dpAmount: Number(booking.dpAmount || booking.bookingDpAmount || 0),
-    payment2Amount: Number(booking.payment2Amount || 0),
-    payment3Amount: Number(booking.payment3Amount || 0),
+    dpPaid: typeof booking.dpPaid === "boolean" ? booking.dpPaid : Number(booking.dpAmount || booking.bookingDpAmount || 0) > 0,
+    payment1Amount: Number(booking.payment1Amount ?? booking.payment2Amount ?? 0),
+    payment1Paid: typeof booking.payment1Paid === "boolean" ? booking.payment1Paid : Number(booking.payment1Amount ?? booking.payment2Amount ?? 0) > 0,
+    payment2Amount: Number(booking.payment1Amount !== undefined ? booking.payment2Amount || 0 : booking.payment3Amount || 0),
+    payment2Paid: typeof booking.payment2Paid === "boolean" ? booking.payment2Paid : Number(booking.payment1Amount !== undefined ? booking.payment2Amount || 0 : booking.payment3Amount || 0) > 0,
     plannedCheckIn: booking.plannedCheckIn || booking.bookingMoveInDate || "",
     note: booking.note || booking.bookingNote || ""
   };
@@ -254,9 +261,28 @@ function getSelectedYear() {
 function activeMonthData() {
   const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
   if (!state.monthlyData[monthKey]) {
-    state.monthlyData[monthKey] = createMonthData(monthKey, false);
+    state.monthlyData[monthKey] = createCarriedMonthData(monthKey);
   }
   return state.monthlyData[monthKey];
+}
+
+function createCarriedMonthData(monthKey) {
+  const previousKey = findPreviousMonthKey(monthKey);
+  if (!previousKey) return createMonthData(monthKey, false);
+
+  const previousData = state.monthlyData[previousKey];
+  return {
+    rooms: (previousData.rooms || []).map((room) => ({ ...room, notes: [...(room.notes || [])] })),
+    bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
+    expenses: []
+  };
+}
+
+function findPreviousMonthKey(monthKey) {
+  return Object.keys(state.monthlyData || {})
+    .filter((key) => key < monthKey)
+    .sort()
+    .pop();
 }
 
 function selectedMonthName() {
@@ -589,6 +615,11 @@ function renderDetail() {
       </label>
 
       <label>
+        Tanggal Bayar
+        <input data-action="payment-due-date" type="date" value="${getPaymentDueDate(room) || ""}">
+      </label>
+
+      <label>
         Tanggal check-out
         <input data-action="check-out-date" type="date" value="${room.checkOutDate || ""}">
       </label>
@@ -756,14 +787,15 @@ function buildReminders() {
 
   activeMonthData().bookings.forEach((booking) => {
     const moveIn = daysUntil(booking.plannedCheckIn);
-    const totalPaid = booking.dpAmount + booking.payment2Amount + booking.payment3Amount;
+    const totalPaid = getBookingPaidTotal(booking);
+    const totalAmount = getBookingTotalAmount(booking);
 
     if (booking.paymentStatus === "Cicil") {
       reminders.push({
         category: "Cicilan",
         priority: "Sedang",
         title: `Pantau cicilan booking ${booking.roomId}`,
-        description: `${booking.prospectName} sudah bayar ${formatCurrency(totalPaid)}. Cek DP/Payment 2/Payment 3.`
+        description: `${booking.prospectName} terbayar ${formatCurrency(totalPaid)} dari ${formatCurrency(totalAmount)}. Cek checklist DP, Payment 1, dan Payment 2.`
       });
     }
 
@@ -818,7 +850,8 @@ function renderBookings() {
   });
 
   bookingList.innerHTML = bookings.length ? bookings.map((booking) => {
-    const totalPaid = booking.dpAmount + booking.payment2Amount + booking.payment3Amount;
+    const totalAmount = getBookingTotalAmount(booking);
+    const totalPaid = getBookingPaidTotal(booking);
 
     return `
       <article class="booking-item">
@@ -828,11 +861,24 @@ function renderBookings() {
           ${booking.note ? `<p>${escapeHtml(booking.note)}</p>` : ""}
         </div>
         <div class="booking-payment-stack">
-          <span>DP ${formatCurrency(booking.dpAmount)}</span>
-          <span>Payment 2 ${formatCurrency(booking.payment2Amount)}</span>
-          <span>Payment 3 ${formatCurrency(booking.payment3Amount)}</span>
-          <strong>Total ${formatCurrency(totalPaid)}</strong>
-          <button class="small-button" type="button" data-delete-booking="${booking.id}">Hapus</button>
+          <label class="mini-check">
+            <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="dpPaid" ${booking.dpPaid ? "checked" : ""}>
+            DP ${formatCurrency(booking.dpAmount)}
+          </label>
+          <label class="mini-check">
+            <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="payment1Paid" ${booking.payment1Paid ? "checked" : ""}>
+            Payment 1 ${formatCurrency(booking.payment1Amount)}
+          </label>
+          <label class="mini-check">
+            <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="payment2Paid" ${booking.payment2Paid ? "checked" : ""}>
+            Payment 2 ${formatCurrency(booking.payment2Amount)}
+          </label>
+          <strong>Terbayar ${formatCurrency(totalPaid)}</strong>
+          <small>Total tagihan ${formatCurrency(totalAmount)}</small>
+          <div class="booking-row-actions">
+            <button class="small-button" type="button" data-edit-booking="${booking.id}">Edit</button>
+            <button class="small-button" type="button" data-delete-booking="${booking.id}">Hapus</button>
+          </div>
         </div>
       </article>
     `;
@@ -945,6 +991,7 @@ function selectedPeriodDate() {
 }
 
 function getPaymentDueDate(room) {
+  if (room.paymentDueDate) return room.paymentDueDate;
   if (!room.checkInDate) return "";
   const checkIn = new Date(`${room.checkInDate}T00:00:00`);
   const period = selectedPeriodDate();
@@ -953,11 +1000,47 @@ function getPaymentDueDate(room) {
   return localDateString(new Date(period.getFullYear(), period.getMonth(), dueDay));
 }
 
+function getBookingTotalAmount(booking) {
+  return Number(booking.dpAmount || 0) + Number(booking.payment1Amount || 0) + Number(booking.payment2Amount || 0);
+}
+
+function getBookingPaidTotal(booking) {
+  return (booking.dpPaid ? Number(booking.dpAmount || 0) : 0) +
+    (booking.payment1Paid ? Number(booking.payment1Amount || 0) : 0) +
+    (booking.payment2Paid ? Number(booking.payment2Amount || 0) : 0);
+}
+
 function daysUntil(dateValue) {
   if (!dateValue) return null;
   const target = new Date(`${dateValue}T00:00:00`);
   const today = new Date(`${localDateString(new Date())}T00:00:00`);
   return Math.round((target - today) / 86400000);
+}
+
+function fillBookingForm(booking) {
+  editingBookingId = booking.id;
+  document.querySelector("#bookingRoomId").value = booking.roomId;
+  document.querySelector("#bookingProspectName").value = booking.prospectName;
+  document.querySelector("#bookingPaymentStatus").value = booking.paymentStatus;
+  document.querySelector("#bookingDpAmount").value = booking.dpAmount || "";
+  document.querySelector("#bookingDpPaid").checked = Boolean(booking.dpPaid);
+  document.querySelector("#bookingPayment1Amount").value = booking.payment1Amount || "";
+  document.querySelector("#bookingPayment1Paid").checked = Boolean(booking.payment1Paid);
+  document.querySelector("#bookingPayment2Amount").value = booking.payment2Amount || "";
+  document.querySelector("#bookingPayment2Paid").checked = Boolean(booking.payment2Paid);
+  document.querySelector("#bookingPlannedCheckIn").value = booking.plannedCheckIn || defaultExpenseDate();
+  document.querySelector("#bookingNote").value = booking.note || "";
+  bookingSubmitBtn.textContent = "Simpan Booking";
+  bookingCancelEditBtn.hidden = false;
+  bookingForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function resetBookingForm() {
+  editingBookingId = null;
+  bookingForm.reset();
+  bookingPlannedCheckIn.value = defaultExpenseDate();
+  bookingSubmitBtn.textContent = "Tambah Booking";
+  bookingCancelEditBtn.hidden = true;
 }
 
 function updateSelectedRoom(updater) {
@@ -994,6 +1077,7 @@ detailPanel.addEventListener("change", (event) => {
     const updated = { ...room };
     if (action === "resident-name") updated.residentName = event.target.value.trim();
     if (action === "check-in-date") updated.checkInDate = event.target.value;
+    if (action === "payment-due-date") updated.paymentDueDate = event.target.value;
     if (action === "check-out-date") updated.checkOutDate = event.target.value;
     if (action === "rent-scheme") updated.rentScheme = event.target.value;
     if (action === "payment") updated.paymentStatus = event.target.value;
@@ -1023,31 +1107,62 @@ bookingForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const booking = {
-    id: crypto.randomUUID(),
+    id: editingBookingId || crypto.randomUUID(),
     roomId: document.querySelector("#bookingRoomId").value,
     prospectName: document.querySelector("#bookingProspectName").value.trim(),
     paymentStatus: document.querySelector("#bookingPaymentStatus").value,
     dpAmount: Number(document.querySelector("#bookingDpAmount").value || 0),
+    dpPaid: document.querySelector("#bookingDpPaid").checked,
+    payment1Amount: Number(document.querySelector("#bookingPayment1Amount").value || 0),
+    payment1Paid: document.querySelector("#bookingPayment1Paid").checked,
     payment2Amount: Number(document.querySelector("#bookingPayment2Amount").value || 0),
-    payment3Amount: Number(document.querySelector("#bookingPayment3Amount").value || 0),
+    payment2Paid: document.querySelector("#bookingPayment2Paid").checked,
     plannedCheckIn: document.querySelector("#bookingPlannedCheckIn").value,
     note: document.querySelector("#bookingNote").value.trim()
   };
 
   if (!booking.roomId || !booking.prospectName || !booking.plannedCheckIn) return;
 
-  activeMonthData().bookings = [booking, ...activeMonthData().bookings];
-  bookingForm.reset();
-  bookingPlannedCheckIn.value = defaultExpenseDate();
+  if (editingBookingId) {
+    activeMonthData().bookings = activeMonthData().bookings.map((item) => item.id === editingBookingId ? booking : item);
+  } else {
+    activeMonthData().bookings = [booking, ...activeMonthData().bookings];
+  }
+
+  resetBookingForm();
   render();
 });
 
 bookingList.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-edit-booking]");
+  if (editButton) {
+    const booking = activeMonthData().bookings.find((item) => item.id === editButton.dataset.editBooking);
+    if (!booking) return;
+    fillBookingForm(booking);
+    return;
+  }
+
   const deleteButton = event.target.closest("[data-delete-booking]");
   if (!deleteButton) return;
 
   activeMonthData().bookings = activeMonthData().bookings.filter((booking) => booking.id !== deleteButton.dataset.deleteBooking);
   render();
+});
+
+bookingList.addEventListener("change", (event) => {
+  const checkbox = event.target.closest("[data-toggle-booking]");
+  if (!checkbox) return;
+
+  const field = checkbox.dataset.paymentField;
+  activeMonthData().bookings = activeMonthData().bookings.map((booking) => {
+    if (booking.id !== checkbox.dataset.toggleBooking) return booking;
+    return { ...booking, [field]: checkbox.checked };
+  });
+  render();
+});
+
+bookingCancelEditBtn.addEventListener("click", () => {
+  resetBookingForm();
 });
 
 shoppingForm.addEventListener("submit", (event) => {
@@ -1074,7 +1189,7 @@ monthSelect.addEventListener("change", () => {
   state.selectedYear = getSelectedYear();
   activeMonthData();
   updateExpenseDateForMonth();
-  bookingPlannedCheckIn.value = defaultExpenseDate();
+  resetBookingForm();
   render();
 });
 
@@ -1086,7 +1201,7 @@ yearSelect.addEventListener("change", () => {
   state.selectedMonth = monthSelect.value;
   activeMonthData();
   updateExpenseDateForMonth();
-  bookingPlannedCheckIn.value = defaultExpenseDate();
+  resetBookingForm();
   render();
 });
 
@@ -1102,7 +1217,7 @@ resetDataBtn.addEventListener("click", () => {
   renderMonthOptions(getSelectedYear());
   monthSelect.value = state.selectedMonth;
   updateExpenseDateForMonth();
-  bookingPlannedCheckIn.value = defaultExpenseDate();
+  resetBookingForm();
   render();
 });
 

@@ -61,7 +61,7 @@ function saveState_(state) {
 
 function syncReadableTabs_(state) {
   const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Check-in", "Tanggal Bayar", "Check-out", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
-  const bookingRows = [["Bulan", "Kamar", "Nama Calon Penghuni", "Status Pembayaran", "DP", "Payment 2", "Payment 3", "Total Pembayaran", "Rencana Check-in", "Catatan Booking", "ID"]];
+  const bookingRows = [["Bulan", "Kamar", "Nama Calon Penghuni", "Status Pembayaran", "DP", "DP Paid", "Payment 1", "Payment 1 Paid", "Payment 2", "Payment 2 Paid", "Total Tagihan", "Total Terbayar", "Rencana Check-in", "Catatan Booking", "ID"]];
   const expenseRows = [["Bulan", "Tanggal", "Kategori", "Item", "Nominal", "ID"]];
 
   Object.keys(state.monthlyData || {}).sort().forEach((monthKey) => {
@@ -86,17 +86,25 @@ function syncReadableTabs_(state) {
 
     (monthData.bookings || []).forEach((booking) => {
       const dp = Number(booking.dpAmount || 0);
-      const payment2 = Number(booking.payment2Amount || 0);
-      const payment3 = Number(booking.payment3Amount || 0);
+      const hasPayment1 = booking.payment1Amount !== undefined;
+      const payment1 = Number(hasPayment1 ? booking.payment1Amount || 0 : booking.payment2Amount || 0);
+      const payment2 = Number(hasPayment1 ? booking.payment2Amount || 0 : booking.payment3Amount || 0);
+      const totalPaid = (booking.dpPaid ? dp : 0) +
+        (booking.payment1Paid ? payment1 : 0) +
+        (booking.payment2Paid ? payment2 : 0);
       bookingRows.push([
         monthKey,
         booking.roomId || "",
         booking.prospectName || "",
         booking.paymentStatus || "",
         dp,
+        booking.dpPaid ? "TRUE" : "FALSE",
+        payment1,
+        booking.payment1Paid ? "TRUE" : "FALSE",
         payment2,
-        payment3,
-        dp + payment2 + payment3,
+        booking.payment2Paid ? "TRUE" : "FALSE",
+        dp + payment1 + payment2,
+        totalPaid,
         booking.plannedCheckIn || "",
         booking.note || "",
         booking.id || ""
@@ -121,6 +129,7 @@ function syncReadableTabs_(state) {
 }
 
 function getPaymentDueDate_(room, monthKey) {
+  if (room.paymentDueDate) return room.paymentDueDate;
   if (!room.checkInDate) return "";
 
   const checkIn = new Date(room.checkInDate + "T00:00:00");

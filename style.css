@@ -680,12 +680,48 @@ textarea:focus {
 
 .booking-form {
   display: grid;
-  grid-template-columns: 0.85fr 1.35fr 0.9fr repeat(3, 0.9fr);
+  grid-template-columns: 0.75fr 1.25fr 0.85fr repeat(6, minmax(120px, 1fr));
   gap: 10px;
   align-items: end;
 }
 
+.booking-form-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .booking-form .primary-button {
+  min-width: 170px;
+}
+
+.checkbox-field,
+.mini-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-field input,
+.mini-check input {
+  width: 17px;
+  min-height: 17px;
+  accent-color: var(--project);
+}
+
+.checkbox-field {
+  min-height: 42px;
+  align-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 9px 10px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.wide-field {
   grid-column: 1 / -1;
 }
 
@@ -733,6 +769,13 @@ textarea:focus {
 
 .booking-payment-stack strong {
   margin-top: 2px;
+}
+
+.booking-row-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
 }
 
 .wide-field {
@@ -967,7 +1010,7 @@ textarea:focus {
   }
 
   .shopping-form .primary-button,
-  .booking-form .primary-button {
+  .booking-form-actions {
     grid-column: 1 / -1;
   }
 }
@@ -1009,5 +1052,10 @@ textarea:focus {
 
   .booking-payment-stack {
     text-align: left;
+  }
+
+  .booking-row-actions,
+  .booking-form-actions {
+    justify-content: flex-start;
   }
 }
