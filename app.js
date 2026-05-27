@@ -7,8 +7,8 @@ const monthNames = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ];
 const now = new Date();
-const trackingYear = now.getFullYear();
-const defaultMonthKey = `${trackingYear}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+const currentYear = now.getFullYear();
+const defaultMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Cicil", "Dispensasi"];
 const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"];
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
@@ -71,13 +71,14 @@ const expenseTracker = document.querySelector("#expenseTracker");
 const expenseList = document.querySelector("#expenseList");
 const resetDataBtn = document.querySelector("#resetDataBtn");
 const expenseDate = document.querySelector("#expenseDate");
+const yearSelect = document.querySelector("#yearSelect");
 const monthSelect = document.querySelector("#monthSelect");
 const syncStatus = document.querySelector("#syncStatus");
 
-monthSelect.innerHTML = monthNames.map((month, index) => {
-  const monthKey = `${trackingYear}-${String(index + 1).padStart(2, "0")}`;
-  return `<option value="${monthKey}">${month} ${trackingYear}</option>`;
-}).join("");
+const initialYear = getYearFromMonthKey(state.selectedMonth || defaultMonthKey);
+renderYearOptions(initialYear);
+yearSelect.value = String(initialYear);
+renderMonthOptions(initialYear);
 monthSelect.value = state.selectedMonth || defaultMonthKey;
 updateExpenseDateForMonth();
 
@@ -95,6 +96,7 @@ function normalizeStoredState(stored) {
       [defaultMonthKey]: createMonthData(defaultMonthKey, true)
     },
     selectedMonth: defaultMonthKey,
+    selectedYear: currentYear,
     selectedRoomId: "A4"
   };
 
@@ -102,14 +104,18 @@ function normalizeStoredState(stored) {
 
   if (stored.monthlyData) {
     const monthlyData = {};
-    monthKeys().forEach((monthKey) => {
-      const savedMonth = stored.monthlyData[monthKey] || createMonthData(monthKey, false);
+    Object.keys(stored.monthlyData).forEach((monthKey) => {
+      const savedMonth = stored.monthlyData[monthKey];
       monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey);
     });
+    if (!monthlyData[defaultMonthKey]) {
+      monthlyData[defaultMonthKey] = createMonthData(defaultMonthKey, true);
+    }
 
     return {
       monthlyData,
       selectedMonth: stored.selectedMonth || defaultMonthKey,
+      selectedYear: stored.selectedYear || getYearFromMonthKey(stored.selectedMonth || defaultMonthKey),
       selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
     };
   }
@@ -123,6 +129,7 @@ function normalizeStoredState(stored) {
         }, defaultMonthKey)
       },
       selectedMonth: defaultMonthKey,
+      selectedYear: currentYear,
       selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
     };
   }
@@ -133,6 +140,7 @@ function normalizeStoredState(stored) {
 function saveState() {
   state.selectedRoomId = selectedRoomId;
   state.selectedMonth = monthSelect.value;
+  state.selectedYear = Number(yearSelect.value);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if (GOOGLE_SHEET_API_URL && remoteReady && !isApplyingRemoteState) {
     scheduleRemoteSave();
@@ -156,8 +164,36 @@ function normalizeMonthData(monthData, monthKey) {
   };
 }
 
-function monthKeys() {
-  return monthNames.map((_, index) => `${trackingYear}-${String(index + 1).padStart(2, "0")}`);
+function renderYearOptions(activeYear) {
+  const storedYears = Object.keys(state.monthlyData || {}).map(getYearFromMonthKey);
+  const minYear = Math.min(currentYear - 1, activeYear, ...storedYears);
+  const maxYear = Math.max(currentYear + 10, activeYear, ...storedYears);
+  const years = [];
+
+  for (let year = minYear; year <= maxYear; year += 1) {
+    years.push(year);
+  }
+
+  yearSelect.innerHTML = years.map((year) => `<option value="${year}">${year}</option>`).join("");
+}
+
+function renderMonthOptions(year) {
+  monthSelect.innerHTML = monthNames.map((month, index) => {
+    const monthKey = `${year}-${String(index + 1).padStart(2, "0")}`;
+    return `<option value="${monthKey}">${month}</option>`;
+  }).join("");
+}
+
+function getYearFromMonthKey(monthKey) {
+  return Number(String(monthKey || defaultMonthKey).slice(0, 4)) || currentYear;
+}
+
+function monthKeys(year = getSelectedYear()) {
+  return monthNames.map((_, index) => `${year}-${String(index + 1).padStart(2, "0")}`);
+}
+
+function getSelectedYear() {
+  return Number(yearSelect.value || state.selectedYear || getYearFromMonthKey(state.selectedMonth) || currentYear);
 }
 
 function activeMonthData() {
@@ -170,7 +206,7 @@ function activeMonthData() {
 
 function selectedMonthName() {
   const monthIndex = Number((monthSelect.value || defaultMonthKey).slice(5, 7)) - 1;
-  return monthNames[monthIndex];
+  return `${monthNames[monthIndex]} ${getSelectedYear()}`;
 }
 
 function defaultExpenseDate() {
@@ -221,6 +257,9 @@ async function loadRemoteState() {
       isApplyingRemoteState = true;
       state = normalizeStoredState(result.state);
       selectedRoomId = state.selectedRoomId;
+      renderYearOptions(getYearFromMonthKey(state.selectedMonth || defaultMonthKey));
+      yearSelect.value = String(state.selectedYear || getYearFromMonthKey(state.selectedMonth || defaultMonthKey));
+      renderMonthOptions(getSelectedYear());
       monthSelect.value = state.selectedMonth || defaultMonthKey;
       updateExpenseDateForMonth();
       render();
@@ -785,6 +824,18 @@ shoppingForm.addEventListener("submit", (event) => {
 
 monthSelect.addEventListener("change", () => {
   state.selectedMonth = monthSelect.value;
+  state.selectedYear = getSelectedYear();
+  activeMonthData();
+  updateExpenseDateForMonth();
+  render();
+});
+
+yearSelect.addEventListener("change", () => {
+  const selectedMonthNumber = (monthSelect.value || defaultMonthKey).slice(5, 7);
+  renderMonthOptions(Number(yearSelect.value));
+  monthSelect.value = `${yearSelect.value}-${selectedMonthNumber}`;
+  state.selectedYear = Number(yearSelect.value);
+  state.selectedMonth = monthSelect.value;
   activeMonthData();
   updateExpenseDateForMonth();
   render();
@@ -797,6 +848,9 @@ resetDataBtn.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
   state = loadState();
   selectedRoomId = state.selectedRoomId;
+  renderYearOptions(getYearFromMonthKey(state.selectedMonth || defaultMonthKey));
+  yearSelect.value = String(state.selectedYear || currentYear);
+  renderMonthOptions(getSelectedYear());
   monthSelect.value = state.selectedMonth;
   updateExpenseDateForMonth();
   render();
