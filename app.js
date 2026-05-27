@@ -467,7 +467,6 @@ function renderRoomCard(room) {
         <span>Tarif: <strong>${rateLabel(room)}</strong></span>
         <span>Bayar: <strong>${compactDate(getPaymentDueDate(room))}</strong></span>
         <span>Keluar: <strong>${compactDate(room.checkOutDate)}</strong></span>
-        ${hasActiveBooking(room) ? `<span>Booking: <strong>${escapeHtml(room.bookingName || room.bookingStatus)}</strong></span>` : ""}
       </div>
       <div class="pill-row">
         <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
@@ -529,18 +528,6 @@ function renderDetail() {
         <strong>${room.checkOutDate ? formatDate(room.checkOutDate) : "Belum diisi"}</strong>
       </div>
       <div class="info-tile">
-        <span>Calon Penghuni</span>
-        <strong>${hasActiveBooking(room) ? escapeHtml(room.bookingName || room.bookingStatus) : "Tidak ada"}</strong>
-      </div>
-      <div class="info-tile">
-        <span>DP Booking</span>
-        <strong>${room.bookingDpAmount ? formatCurrency(room.bookingDpAmount) : "Belum ada DP"}</strong>
-      </div>
-      <div class="info-tile">
-        <span>Rencana Masuk</span>
-        <strong>${room.bookingMoveInDate ? formatDate(room.bookingMoveInDate) : "Belum diisi"}</strong>
-      </div>
-      <div class="info-tile">
         <span>Fasilitas AC</span>
         <strong>${room.hasAc ? "Ada AC" : "Tidak ada AC"}</strong>
       </div>
@@ -568,33 +555,6 @@ function renderDetail() {
       <label>
         Tanggal check-out
         <input data-action="check-out-date" type="date" value="${room.checkOutDate || ""}">
-      </label>
-
-      <label>
-        Status calon penghuni
-        <select data-action="booking-status">
-          ${bookingStatusOptions.map((option) => `<option value="${option}" ${room.bookingStatus === option ? "selected" : ""}>${option}</option>`).join("")}
-        </select>
-      </label>
-
-      <label>
-        Nama calon penghuni
-        <input data-action="booking-name" value="${escapeHtml(room.bookingName || "")}" placeholder="Contoh: Pak Andi booking setelah kamar kosong">
-      </label>
-
-      <label>
-        Nominal DP
-        <input data-action="booking-dp" type="number" min="0" step="1000" value="${room.bookingDpAmount || ""}" placeholder="0">
-      </label>
-
-      <label>
-        Rencana masuk calon penghuni
-        <input data-action="booking-move-in" type="date" value="${room.bookingMoveInDate || ""}">
-      </label>
-
-      <label>
-        Catatan booking
-        <textarea data-action="booking-note" placeholder="Contoh: sudah DP, masuk setelah penghuni lama check-out.">${escapeHtml(room.bookingNote || "")}</textarea>
       </label>
 
       ${isFlexibleRentRoom(room) ? `
@@ -635,6 +595,54 @@ function renderDetail() {
       </label>
       <div class="note-actions">
         <button class="small-button" type="button" id="addNoteBtn">Simpan Catatan</button>
+      </div>
+    </div>
+
+    <div class="booking-panel">
+      <div class="booking-heading">
+        <div>
+          <h3>Early Booking Notes</h3>
+          <p>Catat calon penghuni yang booking sebelum kamar kosong.</p>
+        </div>
+        <span class="pill ${hasActiveBooking(room) ? "project" : ""}">${room.bookingStatus || "Tidak ada"}</span>
+      </div>
+      <div class="booking-summary">
+        <div>
+          <span>Calon penghuni</span>
+          <strong>${hasActiveBooking(room) ? escapeHtml(room.bookingName || "Belum diisi") : "Tidak ada"}</strong>
+        </div>
+        <div>
+          <span>DP</span>
+          <strong>${room.bookingDpAmount ? formatCurrency(room.bookingDpAmount) : "Belum ada DP"}</strong>
+        </div>
+        <div>
+          <span>Rencana masuk</span>
+          <strong>${room.bookingMoveInDate ? formatDate(room.bookingMoveInDate) : "Belum diisi"}</strong>
+        </div>
+      </div>
+      <div class="booking-controls">
+        <label>
+          Status calon penghuni
+          <select data-action="booking-status">
+            ${bookingStatusOptions.map((option) => `<option value="${option}" ${room.bookingStatus === option ? "selected" : ""}>${option}</option>`).join("")}
+          </select>
+        </label>
+        <label>
+          Nama calon penghuni
+          <input data-action="booking-name" value="${escapeHtml(room.bookingName || "")}" placeholder="Contoh: Pak Andi">
+        </label>
+        <label>
+          Nominal DP
+          <input data-action="booking-dp" type="number" min="0" step="1000" value="${room.bookingDpAmount || ""}" placeholder="0">
+        </label>
+        <label>
+          Rencana masuk calon penghuni
+          <input data-action="booking-move-in" type="date" value="${room.bookingMoveInDate || ""}">
+        </label>
+        <label class="wide-field">
+          Catatan booking
+          <textarea data-action="booking-note" placeholder="Contoh: sudah DP, masuk setelah penghuni lama check-out.">${escapeHtml(room.bookingNote || "")}</textarea>
+        </label>
       </div>
     </div>
 
