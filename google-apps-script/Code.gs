@@ -59,7 +59,7 @@ function saveState_(state) {
 }
 
 function syncReadableTabs_(state) {
-  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Check-in", "Tanggal Bayar", "Check-out", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
+  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Check-in", "Tanggal Bayar", "Check-out", "Status Booking", "Calon Penghuni", "DP Booking", "Rencana Masuk", "Catatan Booking", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
   const expenseRows = [["Bulan", "Tanggal", "Kategori", "Item", "Nominal", "ID"]];
 
   Object.keys(state.monthlyData || {}).sort().forEach((monthKey) => {
@@ -75,6 +75,11 @@ function syncReadableTabs_(state) {
         room.checkInDate || "",
         getPaymentDueDate_(room, monthKey),
         room.checkOutDate || "",
+        room.bookingStatus || "Tidak ada",
+        room.bookingName || "",
+        Number(room.bookingDpAmount || 0),
+        room.bookingMoveInDate || "",
+        room.bookingNote || "",
         room.paymentStatus || "",
         room.roomStatus || "",
         room.acStatus || "Tidak berlaku",

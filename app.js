@@ -14,6 +14,7 @@ const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenan
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
 const flexibleRentTypes = ["Standard", "Standard+"];
 const rentSchemeOptions = ["Bulanan", "Semesteran"];
+const bookingStatusOptions = ["Tidak ada", "Early Booking", "DP Masuk"];
 const roomTypeGroups = [
   { type: "Standard", description: "Bulanan atau semesteran", tone: "standard" },
   { type: "Standard+", description: "Semesteran", tone: "standard-plus" },
@@ -167,6 +168,11 @@ function normalizeMonthData(monthData, monthKey) {
         residentName: savedRoom.residentName || "",
         checkInDate: savedRoom.checkInDate || "",
         checkOutDate: savedRoom.checkOutDate || "",
+        bookingStatus: savedRoom.bookingStatus || "Tidak ada",
+        bookingName: savedRoom.bookingName || "",
+        bookingDpAmount: Number(savedRoom.bookingDpAmount || 0),
+        bookingMoveInDate: savedRoom.bookingMoveInDate || "",
+        bookingNote: savedRoom.bookingNote || "",
         notes: savedRoom.notes || []
       };
     }),
@@ -344,6 +350,10 @@ function isFlexibleRentRoom(room) {
   return flexibleRentTypes.includes(room.type);
 }
 
+function hasActiveBooking(room) {
+  return room.bookingStatus && room.bookingStatus !== "Tidak ada";
+}
+
 function currentMonthExpenses() {
   return activeMonthData().expenses;
 }
@@ -457,11 +467,13 @@ function renderRoomCard(room) {
         <span>Tarif: <strong>${rateLabel(room)}</strong></span>
         <span>Bayar: <strong>${compactDate(getPaymentDueDate(room))}</strong></span>
         <span>Keluar: <strong>${compactDate(room.checkOutDate)}</strong></span>
+        ${hasActiveBooking(room) ? `<span>Booking: <strong>${escapeHtml(room.bookingName || room.bookingStatus)}</strong></span>` : ""}
       </div>
       <div class="pill-row">
         <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
         <span class="pill ${pillTone(room.roomStatus)}">${room.roomStatus}</span>
         <span class="pill ${pillTone(room.acStatus)}">${acText}</span>
+        ${hasActiveBooking(room) ? `<span class="pill project">${room.bookingStatus}</span>` : ""}
       </div>
     </button>
   `;
@@ -517,6 +529,18 @@ function renderDetail() {
         <strong>${room.checkOutDate ? formatDate(room.checkOutDate) : "Belum diisi"}</strong>
       </div>
       <div class="info-tile">
+        <span>Calon Penghuni</span>
+        <strong>${hasActiveBooking(room) ? escapeHtml(room.bookingName || room.bookingStatus) : "Tidak ada"}</strong>
+      </div>
+      <div class="info-tile">
+        <span>DP Booking</span>
+        <strong>${room.bookingDpAmount ? formatCurrency(room.bookingDpAmount) : "Belum ada DP"}</strong>
+      </div>
+      <div class="info-tile">
+        <span>Rencana Masuk</span>
+        <strong>${room.bookingMoveInDate ? formatDate(room.bookingMoveInDate) : "Belum diisi"}</strong>
+      </div>
+      <div class="info-tile">
         <span>Fasilitas AC</span>
         <strong>${room.hasAc ? "Ada AC" : "Tidak ada AC"}</strong>
       </div>
@@ -544,6 +568,33 @@ function renderDetail() {
       <label>
         Tanggal check-out
         <input data-action="check-out-date" type="date" value="${room.checkOutDate || ""}">
+      </label>
+
+      <label>
+        Status calon penghuni
+        <select data-action="booking-status">
+          ${bookingStatusOptions.map((option) => `<option value="${option}" ${room.bookingStatus === option ? "selected" : ""}>${option}</option>`).join("")}
+        </select>
+      </label>
+
+      <label>
+        Nama calon penghuni
+        <input data-action="booking-name" value="${escapeHtml(room.bookingName || "")}" placeholder="Contoh: Pak Andi booking setelah kamar kosong">
+      </label>
+
+      <label>
+        Nominal DP
+        <input data-action="booking-dp" type="number" min="0" step="1000" value="${room.bookingDpAmount || ""}" placeholder="0">
+      </label>
+
+      <label>
+        Rencana masuk calon penghuni
+        <input data-action="booking-move-in" type="date" value="${room.bookingMoveInDate || ""}">
+      </label>
+
+      <label>
+        Catatan booking
+        <textarea data-action="booking-note" placeholder="Contoh: sudah DP, masuk setelah penghuni lama check-out.">${escapeHtml(room.bookingNote || "")}</textarea>
       </label>
 
       ${isFlexibleRentRoom(room) ? `
@@ -619,6 +670,36 @@ function buildReminders() {
     const dueDate = getPaymentDueDate(room);
     const dueIn = daysUntil(dueDate);
     const outIn = daysUntil(room.checkOutDate);
+    const bookingMoveIn = daysUntil(room.bookingMoveInDate);
+
+    if (hasActiveBooking(room)) {
+      if (room.bookingStatus === "Early Booking" && !room.bookingDpAmount) {
+        reminders.push({
+          category: "Pembayaran",
+          priority: "Sedang",
+          title: `DP booking ${room.id} belum dicatat`,
+          description: `${room.bookingName || "Calon penghuni"} sudah early booking. Catat DP jika sudah masuk.`
+        });
+      }
+
+      if (room.checkOutDate && room.bookingMoveInDate) {
+        reminders.push({
+          category: "Proyek",
+          priority: "Sedang",
+          title: `Siapkan transisi kamar ${room.id}`,
+          description: `${room.bookingName || "Calon penghuni"} masuk ${formatDate(room.bookingMoveInDate)} setelah penghuni lama keluar ${formatDate(room.checkOutDate)}.`
+        });
+      }
+
+      if (room.bookingMoveInDate && bookingMoveIn !== null && bookingMoveIn >= 0 && bookingMoveIn <= 14) {
+        reminders.push({
+          category: "Proyek",
+          priority: bookingMoveIn <= 3 ? "Tinggi" : "Sedang",
+          title: `Calon penghuni ${room.id} masuk dalam ${bookingMoveIn} hari`,
+          description: `${room.bookingName || "Calon penghuni"} dijadwalkan masuk ${formatDate(room.bookingMoveInDate)}.`
+        });
+      }
+    }
 
     if (dueDate && dueIn !== null && dueIn < 0 && room.paymentStatus !== "Lunas") {
       reminders.push({
@@ -898,6 +979,11 @@ detailPanel.addEventListener("change", (event) => {
     if (action === "resident-name") updated.residentName = event.target.value.trim();
     if (action === "check-in-date") updated.checkInDate = event.target.value;
     if (action === "check-out-date") updated.checkOutDate = event.target.value;
+    if (action === "booking-status") updated.bookingStatus = event.target.value;
+    if (action === "booking-name") updated.bookingName = event.target.value.trim();
+    if (action === "booking-dp") updated.bookingDpAmount = Number(event.target.value || 0);
+    if (action === "booking-move-in") updated.bookingMoveInDate = event.target.value;
+    if (action === "booking-note") updated.bookingNote = event.target.value.trim();
     if (action === "rent-scheme") updated.rentScheme = event.target.value;
     if (action === "payment") updated.paymentStatus = event.target.value;
     if (action === "room-status") updated.roomStatus = event.target.value;
