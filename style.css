@@ -108,6 +108,38 @@ h3 {
   text-transform: none;
 }
 
+.sync-status {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted);
+  padding: 0 12px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.sync-status.online {
+  border-color: #b9e4c9;
+  background: #effaf3;
+  color: #217446;
+}
+
+.sync-status.saving {
+  border-color: #f0d48f;
+  background: #fff8e7;
+  color: #8d6611;
+}
+
+.sync-status.error {
+  border-color: #ffc0ba;
+  background: #fff0ee;
+  color: #a63328;
+}
+
 .primary-button,
 .ghost-button,
 .small-button {

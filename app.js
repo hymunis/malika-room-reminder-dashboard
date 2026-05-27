@@ -1,4 +1,6 @@
 const STORAGE_KEY = "malika-room-reminder-state-v1";
+// Paste Google Apps Script Web App /exec URL here after deployment.
+const GOOGLE_SHEET_API_URL = "";
 
 const monthNames = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -56,6 +58,9 @@ const baseRooms = [
 
 let state = loadState();
 let selectedRoomId = state.selectedRoomId || "A4";
+let remoteReady = !GOOGLE_SHEET_API_URL;
+let isApplyingRemoteState = false;
+let syncTimer;
 
 const summaryGrid = document.querySelector("#summaryGrid");
 const roomBoard = document.querySelector("#roomBoard");
@@ -67,6 +72,7 @@ const expenseList = document.querySelector("#expenseList");
 const resetDataBtn = document.querySelector("#resetDataBtn");
 const expenseDate = document.querySelector("#expenseDate");
 const monthSelect = document.querySelector("#monthSelect");
+const syncStatus = document.querySelector("#syncStatus");
 
 monthSelect.innerHTML = monthNames.map((month, index) => {
   const monthKey = `${trackingYear}-${String(index + 1).padStart(2, "0")}`;
@@ -76,6 +82,14 @@ monthSelect.value = state.selectedMonth || defaultMonthKey;
 updateExpenseDateForMonth();
 
 function loadState() {
+  try {
+    return normalizeStoredState(JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"));
+  } catch {
+    return normalizeStoredState(null);
+  }
+}
+
+function normalizeStoredState(stored) {
   const fallback = {
     monthlyData: {
       [defaultMonthKey]: createMonthData(defaultMonthKey, true)
@@ -84,47 +98,45 @@ function loadState() {
     selectedRoomId: "A4"
   };
 
-  try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!stored) return fallback;
+  if (!stored) return fallback;
 
-    if (stored.monthlyData) {
-      const monthlyData = {};
-      monthKeys().forEach((monthKey) => {
-        const savedMonth = stored.monthlyData[monthKey] || createMonthData(monthKey, false);
-        monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey);
-      });
+  if (stored.monthlyData) {
+    const monthlyData = {};
+    monthKeys().forEach((monthKey) => {
+      const savedMonth = stored.monthlyData[monthKey] || createMonthData(monthKey, false);
+      monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey);
+    });
 
-      return {
-        monthlyData,
-        selectedMonth: stored.selectedMonth || defaultMonthKey,
-        selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
-      };
-    }
-
-    if (Array.isArray(stored.rooms)) {
-      return {
-        monthlyData: {
-          [defaultMonthKey]: normalizeMonthData({
-            rooms: stored.rooms,
-            expenses: Array.isArray(stored.expenses) ? stored.expenses : seedExpenses(defaultMonthKey)
-          }, defaultMonthKey)
-        },
-        selectedMonth: defaultMonthKey,
-        selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
-      };
-    }
-
-    return fallback;
-  } catch {
-    return fallback;
+    return {
+      monthlyData,
+      selectedMonth: stored.selectedMonth || defaultMonthKey,
+      selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
+    };
   }
+
+  if (Array.isArray(stored.rooms)) {
+    return {
+      monthlyData: {
+        [defaultMonthKey]: normalizeMonthData({
+          rooms: stored.rooms,
+          expenses: Array.isArray(stored.expenses) ? stored.expenses : seedExpenses(defaultMonthKey)
+        }, defaultMonthKey)
+      },
+      selectedMonth: defaultMonthKey,
+      selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
+    };
+  }
+
+  return fallback;
 }
 
 function saveState() {
   state.selectedRoomId = selectedRoomId;
   state.selectedMonth = monthSelect.value;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (GOOGLE_SHEET_API_URL && remoteReady && !isApplyingRemoteState) {
+    scheduleRemoteSave();
+  }
 }
 
 function createMonthData(monthKey, withSeedExpenses = false) {
@@ -185,6 +197,72 @@ function localDateString(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function setSyncStatus(message, tone = "") {
+  syncStatus.textContent = message;
+  syncStatus.className = `sync-status ${tone}`.trim();
+}
+
+async function loadRemoteState() {
+  if (!GOOGLE_SHEET_API_URL) {
+    setSyncStatus("Local storage");
+    return;
+  }
+
+  setSyncStatus("Mengambil data...", "saving");
+
+  try {
+    const response = await fetch(`${GOOGLE_SHEET_API_URL}?action=load&cache=${Date.now()}`);
+    const result = await response.json();
+
+    remoteReady = true;
+    if (result.ok && result.state) {
+      isApplyingRemoteState = true;
+      state = normalizeStoredState(result.state);
+      selectedRoomId = state.selectedRoomId;
+      monthSelect.value = state.selectedMonth || defaultMonthKey;
+      updateExpenseDateForMonth();
+      render();
+      isApplyingRemoteState = false;
+      setSyncStatus("Google Sheet tersambung", "online");
+      return;
+    }
+
+    setSyncStatus("Sheet siap, menyimpan...", "saving");
+    scheduleRemoteSave(0);
+  } catch {
+    remoteReady = true;
+    setSyncStatus("Offline, pakai lokal", "error");
+  }
+}
+
+function scheduleRemoteSave(delay = 700) {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveRemoteState, delay);
+}
+
+async function saveRemoteState() {
+  if (!GOOGLE_SHEET_API_URL) return;
+
+  setSyncStatus("Menyimpan...", "saving");
+
+  try {
+    const response = await fetch(GOOGLE_SHEET_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "save",
+        state,
+        updatedAt: new Date().toISOString()
+      })
+    });
+    const result = await response.json();
+    if (!result.ok) throw new Error(result.error || "Save failed");
+    setSyncStatus("Tersimpan di Google Sheet", "online");
+  } catch {
+    setSyncStatus("Gagal sync, lokal aman", "error");
+  }
 }
 
 function seedExpenses(monthKey = defaultMonthKey) {
@@ -725,3 +803,4 @@ resetDataBtn.addEventListener("click", () => {
 });
 
 render();
+loadRemoteState();
