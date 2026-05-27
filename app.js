@@ -39,23 +39,23 @@ const expenseTrackingRules = [
 ];
 
 const baseRooms = [
-  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "" },
-  { id: "A6", type: "Standard+", scheme: "Bulanan / Semesteran", rentScheme: "Semesteran", monthlyRate: 1000000, semesterRate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "A8", type: "Standard+", scheme: "Bulanan / Semesteran", rentScheme: "Semesteran", monthlyRate: 1000000, semesterRate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "A2", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "A3", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "A7", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "B7", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "B8", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" },
-  { id: "B9", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "" }
+  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A6", type: "Standard+", scheme: "Bulanan / Semesteran", rentScheme: "Semesteran", monthlyRate: 1000000, semesterRate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A8", type: "Standard+", scheme: "Bulanan / Semesteran", rentScheme: "Semesteran", monthlyRate: 1000000, semesterRate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A2", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A3", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A7", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B7", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B8", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B9", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" }
 ];
 
 let state = loadState();
@@ -165,6 +165,8 @@ function normalizeMonthData(monthData, monthKey) {
         ...savedRoom,
         rentScheme: savedRoom.rentScheme || baseRoom.rentScheme || baseRoom.scheme,
         residentName: savedRoom.residentName || "",
+        checkInDate: savedRoom.checkInDate || "",
+        checkOutDate: savedRoom.checkOutDate || "",
         notes: savedRoom.notes || []
       };
     }),
@@ -453,6 +455,8 @@ function renderRoomCard(room) {
         <span>Penghuni: <strong>${room.residentName ? escapeHtml(room.residentName) : "Belum diisi"}</strong></span>
         <span>Skema: <strong>${schemeLabel(room)}</strong></span>
         <span>Tarif: <strong>${rateLabel(room)}</strong></span>
+        <span>Bayar: <strong>${compactDate(getPaymentDueDate(room))}</strong></span>
+        <span>Keluar: <strong>${compactDate(room.checkOutDate)}</strong></span>
       </div>
       <div class="pill-row">
         <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
@@ -501,6 +505,18 @@ function renderDetail() {
         <strong>${schemeLabel(room)}</strong>
       </div>
       <div class="info-tile">
+        <span>Tanggal Bayar</span>
+        <strong>${compactDate(getPaymentDueDate(room))}</strong>
+      </div>
+      <div class="info-tile">
+        <span>Check-in</span>
+        <strong>${room.checkInDate ? formatDate(room.checkInDate) : "Belum diisi"}</strong>
+      </div>
+      <div class="info-tile">
+        <span>Check-out</span>
+        <strong>${room.checkOutDate ? formatDate(room.checkOutDate) : "Belum diisi"}</strong>
+      </div>
+      <div class="info-tile">
         <span>Fasilitas AC</span>
         <strong>${room.hasAc ? "Ada AC" : "Tidak ada AC"}</strong>
       </div>
@@ -518,6 +534,16 @@ function renderDetail() {
       <label>
         Nama penghuni
         <input data-action="resident-name" value="${escapeHtml(room.residentName || "")}" placeholder="Contoh: Ibu Sari / Pak Budi">
+      </label>
+
+      <label>
+        Tanggal check-in
+        <input data-action="check-in-date" type="date" value="${room.checkInDate || ""}">
+      </label>
+
+      <label>
+        Tanggal check-out
+        <input data-action="check-out-date" type="date" value="${room.checkOutDate || ""}">
       </label>
 
       ${isFlexibleRentRoom(room) ? `
@@ -590,6 +616,42 @@ function buildReminders() {
   const reminders = [];
 
   activeMonthData().rooms.forEach((room) => {
+    const dueDate = getPaymentDueDate(room);
+    const dueIn = daysUntil(dueDate);
+    const outIn = daysUntil(room.checkOutDate);
+
+    if (dueDate && dueIn !== null && dueIn < 0 && room.paymentStatus !== "Lunas") {
+      reminders.push({
+        category: "Pembayaran",
+        priority: "Tinggi",
+        title: `Pembayaran ${room.id} lewat ${Math.abs(dueIn)} hari`,
+        description: `Tanggal bayar periode ini: ${formatDate(dueDate)}.`
+      });
+    } else if (dueDate && dueIn !== null && dueIn >= 0 && dueIn <= 7) {
+      reminders.push({
+        category: "Pembayaran",
+        priority: dueIn <= 2 ? "Tinggi" : "Sedang",
+        title: `Pembayaran ${room.id} dalam ${dueIn} hari`,
+        description: `Tanggal bayar periode ini: ${formatDate(dueDate)}.`
+      });
+    }
+
+    if (room.checkOutDate && outIn !== null && outIn < 0) {
+      reminders.push({
+        category: "Proyek",
+        priority: "Tinggi",
+        title: `Check-out ${room.id} sudah lewat`,
+        description: `Tanggal keluar: ${formatDate(room.checkOutDate)}. Cek status kamar dan serah terima.`
+      });
+    } else if (room.checkOutDate && outIn !== null && outIn >= 0 && outIn <= 14) {
+      reminders.push({
+        category: "Proyek",
+        priority: outIn <= 3 ? "Tinggi" : "Sedang",
+        title: `Check-out ${room.id} dalam ${outIn} hari`,
+        description: `Tanggal keluar: ${formatDate(room.checkOutDate)}. Siapkan follow-up penghuni.`
+      });
+    }
+
     if (room.paymentStatus === "Telat") {
       reminders.push({
         category: "Pembayaran",
@@ -773,6 +835,34 @@ function formatDate(dateValue) {
   }).format(new Date(`${dateValue}T00:00:00`));
 }
 
+function compactDate(dateValue) {
+  if (!dateValue) return "Belum diisi";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short"
+  }).format(new Date(`${dateValue}T00:00:00`));
+}
+
+function selectedPeriodDate() {
+  return new Date(`${monthSelect.value || defaultMonthKey}-01T00:00:00`);
+}
+
+function getPaymentDueDate(room) {
+  if (!room.checkInDate) return "";
+  const checkIn = new Date(`${room.checkInDate}T00:00:00`);
+  const period = selectedPeriodDate();
+  const lastDay = new Date(period.getFullYear(), period.getMonth() + 1, 0).getDate();
+  const dueDay = Math.min(checkIn.getDate(), lastDay);
+  return localDateString(new Date(period.getFullYear(), period.getMonth(), dueDay));
+}
+
+function daysUntil(dateValue) {
+  if (!dateValue) return null;
+  const target = new Date(`${dateValue}T00:00:00`);
+  const today = new Date(`${localDateString(new Date())}T00:00:00`);
+  return Math.round((target - today) / 86400000);
+}
+
 function updateSelectedRoom(updater) {
   const monthData = activeMonthData();
   monthData.rooms = monthData.rooms.map((room) => {
@@ -806,6 +896,8 @@ detailPanel.addEventListener("change", (event) => {
   updateSelectedRoom((room) => {
     const updated = { ...room };
     if (action === "resident-name") updated.residentName = event.target.value.trim();
+    if (action === "check-in-date") updated.checkInDate = event.target.value;
+    if (action === "check-out-date") updated.checkOutDate = event.target.value;
     if (action === "rent-scheme") updated.rentScheme = event.target.value;
     if (action === "payment") updated.paymentStatus = event.target.value;
     if (action === "room-status") updated.roomStatus = event.target.value;
