@@ -59,7 +59,7 @@ function saveState_(state) {
 }
 
 function syncReadableTabs_(state) {
-  const roomsRows = [["Bulan", "Kamar", "Tipe", "Nama Penghuni", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
+  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
   const expenseRows = [["Bulan", "Tanggal", "Kategori", "Item", "Nominal", "ID"]];
 
   Object.keys(state.monthlyData || {}).sort().forEach((monthKey) => {
@@ -70,6 +70,7 @@ function syncReadableTabs_(state) {
         monthKey,
         room.id || "",
         room.type || "",
+        room.rentScheme || room.scheme || "",
         room.residentName || "",
         room.paymentStatus || "",
         room.roomStatus || "",
