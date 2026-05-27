@@ -1,6 +1,7 @@
 const SPREADSHEET_ID = "1uSzllkqfdrj_aS8jQ9Yq9tT7oLJTfO6WmjCuV0IGMJ0";
 const STATE_SHEET_NAME = "State";
 const ROOMS_SHEET_NAME = "Rooms";
+const BOOKINGS_SHEET_NAME = "Bookings";
 const EXPENSES_SHEET_NAME = "Expenses";
 
 function doGet(e) {
@@ -59,7 +60,8 @@ function saveState_(state) {
 }
 
 function syncReadableTabs_(state) {
-  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Check-in", "Tanggal Bayar", "Check-out", "Status Booking", "Calon Penghuni", "DP Booking", "Rencana Masuk", "Catatan Booking", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
+  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Check-in", "Tanggal Bayar", "Check-out", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
+  const bookingRows = [["Bulan", "Kamar", "Nama Calon Penghuni", "Status Pembayaran", "DP", "Payment 2", "Payment 3", "Total Pembayaran", "Rencana Check-in", "Catatan Booking", "ID"]];
   const expenseRows = [["Bulan", "Tanggal", "Kategori", "Item", "Nominal", "ID"]];
 
   Object.keys(state.monthlyData || {}).sort().forEach((monthKey) => {
@@ -75,15 +77,29 @@ function syncReadableTabs_(state) {
         room.checkInDate || "",
         getPaymentDueDate_(room, monthKey),
         room.checkOutDate || "",
-        room.bookingStatus || "Tidak ada",
-        room.bookingName || "",
-        Number(room.bookingDpAmount || 0),
-        room.bookingMoveInDate || "",
-        room.bookingNote || "",
         room.paymentStatus || "",
         room.roomStatus || "",
         room.acStatus || "Tidak berlaku",
         (room.notes || []).length
+      ]);
+    });
+
+    (monthData.bookings || []).forEach((booking) => {
+      const dp = Number(booking.dpAmount || 0);
+      const payment2 = Number(booking.payment2Amount || 0);
+      const payment3 = Number(booking.payment3Amount || 0);
+      bookingRows.push([
+        monthKey,
+        booking.roomId || "",
+        booking.prospectName || "",
+        booking.paymentStatus || "",
+        dp,
+        payment2,
+        payment3,
+        dp + payment2 + payment3,
+        booking.plannedCheckIn || "",
+        booking.note || "",
+        booking.id || ""
       ]);
     });
 
@@ -100,6 +116,7 @@ function syncReadableTabs_(state) {
   });
 
   writeRows_(ROOMS_SHEET_NAME, roomsRows);
+  writeRows_(BOOKINGS_SHEET_NAME, bookingRows);
   writeRows_(EXPENSES_SHEET_NAME, expenseRows);
 }
 

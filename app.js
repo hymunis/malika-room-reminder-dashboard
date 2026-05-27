@@ -14,7 +14,7 @@ const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenan
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
 const flexibleRentTypes = ["Standard", "Standard+"];
 const rentSchemeOptions = ["Bulanan", "Semesteran"];
-const bookingStatusOptions = ["Tidak ada", "Early Booking", "DP Masuk"];
+const bookingPaymentOptions = ["Lunas", "Cicil"];
 const roomTypeGroups = [
   { type: "Standard", description: "Bulanan atau semesteran", tone: "standard" },
   { type: "Standard+", description: "Semesteran", tone: "standard-plus" },
@@ -69,6 +69,10 @@ const summaryGrid = document.querySelector("#summaryGrid");
 const roomBoard = document.querySelector("#roomBoard");
 const detailPanel = document.querySelector("#detailPanel");
 const reminderList = document.querySelector("#reminderList");
+const bookingForm = document.querySelector("#bookingForm");
+const bookingRoomId = document.querySelector("#bookingRoomId");
+const bookingPlannedCheckIn = document.querySelector("#bookingPlannedCheckIn");
+const bookingList = document.querySelector("#bookingList");
 const shoppingForm = document.querySelector("#shoppingForm");
 const expenseTracker = document.querySelector("#expenseTracker");
 const expenseList = document.querySelector("#expenseList");
@@ -84,6 +88,8 @@ yearSelect.value = String(initialYear);
 renderMonthOptions(initialYear);
 monthSelect.value = state.selectedMonth || defaultMonthKey;
 updateExpenseDateForMonth();
+bookingRoomId.innerHTML = baseRooms.map((room) => `<option value="${room.id}">${room.id}</option>`).join("");
+bookingPlannedCheckIn.value = defaultExpenseDate();
 
 function loadState() {
   try {
@@ -153,6 +159,7 @@ function saveState() {
 function createMonthData(monthKey, withSeedExpenses = false) {
   return {
     rooms: baseRooms.map((room) => ({ ...room, notes: [] })),
+    bookings: [],
     expenses: withSeedExpenses ? seedExpenses(monthKey) : []
   };
 }
@@ -161,23 +168,55 @@ function normalizeMonthData(monthData, monthKey) {
   return {
     rooms: baseRooms.map((baseRoom) => {
       const savedRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
+      const {
+        bookingStatus,
+        bookingName,
+        bookingDpAmount,
+        bookingMoveInDate,
+        bookingNote,
+        ...roomData
+      } = savedRoom;
+
       return {
         ...baseRoom,
-        ...savedRoom,
-        rentScheme: savedRoom.rentScheme || baseRoom.rentScheme || baseRoom.scheme,
-        residentName: savedRoom.residentName || "",
-        checkInDate: savedRoom.checkInDate || "",
-        checkOutDate: savedRoom.checkOutDate || "",
-        bookingStatus: savedRoom.bookingStatus || "Tidak ada",
-        bookingName: savedRoom.bookingName || "",
-        bookingDpAmount: Number(savedRoom.bookingDpAmount || 0),
-        bookingMoveInDate: savedRoom.bookingMoveInDate || "",
-        bookingNote: savedRoom.bookingNote || "",
-        notes: savedRoom.notes || []
+        ...roomData,
+        rentScheme: roomData.rentScheme || baseRoom.rentScheme || baseRoom.scheme,
+        residentName: roomData.residentName || "",
+        checkInDate: roomData.checkInDate || "",
+        checkOutDate: roomData.checkOutDate || "",
+        notes: roomData.notes || []
       };
     }),
+    bookings: Array.isArray(monthData.bookings) ? monthData.bookings.map(normalizeBooking) : migrateRoomBookings(monthData.rooms || []),
     expenses: Array.isArray(monthData.expenses) ? monthData.expenses : seedExpenses(monthKey)
   };
+}
+
+function normalizeBooking(booking) {
+  return {
+    id: booking.id || crypto.randomUUID(),
+    roomId: booking.roomId || "A1",
+    prospectName: booking.prospectName || booking.bookingName || "",
+    paymentStatus: booking.paymentStatus || "Cicil",
+    dpAmount: Number(booking.dpAmount || booking.bookingDpAmount || 0),
+    payment2Amount: Number(booking.payment2Amount || 0),
+    payment3Amount: Number(booking.payment3Amount || 0),
+    plannedCheckIn: booking.plannedCheckIn || booking.bookingMoveInDate || "",
+    note: booking.note || booking.bookingNote || ""
+  };
+}
+
+function migrateRoomBookings(rooms) {
+  return rooms
+    .filter((room) => room.bookingStatus && room.bookingStatus !== "Tidak ada")
+    .map((room) => normalizeBooking({
+      roomId: room.id,
+      prospectName: room.bookingName || "",
+      paymentStatus: room.bookingStatus === "DP Masuk" ? "Cicil" : "Cicil",
+      dpAmount: room.bookingDpAmount || 0,
+      plannedCheckIn: room.bookingMoveInDate || "",
+      note: room.bookingNote || ""
+    }));
 }
 
 function renderYearOptions(activeYear) {
@@ -278,6 +317,7 @@ async function loadRemoteState() {
       renderMonthOptions(getSelectedYear());
       monthSelect.value = state.selectedMonth || defaultMonthKey;
       updateExpenseDateForMonth();
+      bookingPlannedCheckIn.value = defaultExpenseDate();
       render();
       isApplyingRemoteState = false;
       setSyncStatus("Google Sheet tersambung", "online");
@@ -350,10 +390,6 @@ function isFlexibleRentRoom(room) {
   return flexibleRentTypes.includes(room.type);
 }
 
-function hasActiveBooking(room) {
-  return room.bookingStatus && room.bookingStatus !== "Tidak ada";
-}
-
 function currentMonthExpenses() {
   return activeMonthData().expenses;
 }
@@ -394,6 +430,7 @@ function render() {
   renderRoomBoard();
   renderDetail();
   renderReminders();
+  renderBookings();
   renderExpenseTracker();
   renderExpenses();
   saveState();
@@ -472,7 +509,6 @@ function renderRoomCard(room) {
         <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
         <span class="pill ${pillTone(room.roomStatus)}">${room.roomStatus}</span>
         <span class="pill ${pillTone(room.acStatus)}">${acText}</span>
-        ${hasActiveBooking(room) ? `<span class="pill project">${room.bookingStatus}</span>` : ""}
       </div>
     </button>
   `;
@@ -598,54 +634,6 @@ function renderDetail() {
       </div>
     </div>
 
-    <div class="booking-panel">
-      <div class="booking-heading">
-        <div>
-          <h3>Early Booking Notes</h3>
-          <p>Catat calon penghuni yang booking sebelum kamar kosong.</p>
-        </div>
-        <span class="pill ${hasActiveBooking(room) ? "project" : ""}">${room.bookingStatus || "Tidak ada"}</span>
-      </div>
-      <div class="booking-summary">
-        <div>
-          <span>Calon penghuni</span>
-          <strong>${hasActiveBooking(room) ? escapeHtml(room.bookingName || "Belum diisi") : "Tidak ada"}</strong>
-        </div>
-        <div>
-          <span>DP</span>
-          <strong>${room.bookingDpAmount ? formatCurrency(room.bookingDpAmount) : "Belum ada DP"}</strong>
-        </div>
-        <div>
-          <span>Rencana masuk</span>
-          <strong>${room.bookingMoveInDate ? formatDate(room.bookingMoveInDate) : "Belum diisi"}</strong>
-        </div>
-      </div>
-      <div class="booking-controls">
-        <label>
-          Status calon penghuni
-          <select data-action="booking-status">
-            ${bookingStatusOptions.map((option) => `<option value="${option}" ${room.bookingStatus === option ? "selected" : ""}>${option}</option>`).join("")}
-          </select>
-        </label>
-        <label>
-          Nama calon penghuni
-          <input data-action="booking-name" value="${escapeHtml(room.bookingName || "")}" placeholder="Contoh: Pak Andi">
-        </label>
-        <label>
-          Nominal DP
-          <input data-action="booking-dp" type="number" min="0" step="1000" value="${room.bookingDpAmount || ""}" placeholder="0">
-        </label>
-        <label>
-          Rencana masuk calon penghuni
-          <input data-action="booking-move-in" type="date" value="${room.bookingMoveInDate || ""}">
-        </label>
-        <label class="wide-field">
-          Catatan booking
-          <textarea data-action="booking-note" placeholder="Contoh: sudah DP, masuk setelah penghuni lama check-out.">${escapeHtml(room.bookingNote || "")}</textarea>
-        </label>
-      </div>
-    </div>
-
     <div class="notes-list">
       ${(room.notes || []).length ? room.notes.map((note) => `
         <article class="note-item">
@@ -678,36 +666,6 @@ function buildReminders() {
     const dueDate = getPaymentDueDate(room);
     const dueIn = daysUntil(dueDate);
     const outIn = daysUntil(room.checkOutDate);
-    const bookingMoveIn = daysUntil(room.bookingMoveInDate);
-
-    if (hasActiveBooking(room)) {
-      if (room.bookingStatus === "Early Booking" && !room.bookingDpAmount) {
-        reminders.push({
-          category: "Pembayaran",
-          priority: "Sedang",
-          title: `DP booking ${room.id} belum dicatat`,
-          description: `${room.bookingName || "Calon penghuni"} sudah early booking. Catat DP jika sudah masuk.`
-        });
-      }
-
-      if (room.checkOutDate && room.bookingMoveInDate) {
-        reminders.push({
-          category: "Proyek",
-          priority: "Sedang",
-          title: `Siapkan transisi kamar ${room.id}`,
-          description: `${room.bookingName || "Calon penghuni"} masuk ${formatDate(room.bookingMoveInDate)} setelah penghuni lama keluar ${formatDate(room.checkOutDate)}.`
-        });
-      }
-
-      if (room.bookingMoveInDate && bookingMoveIn !== null && bookingMoveIn >= 0 && bookingMoveIn <= 14) {
-        reminders.push({
-          category: "Proyek",
-          priority: bookingMoveIn <= 3 ? "Tinggi" : "Sedang",
-          title: `Calon penghuni ${room.id} masuk dalam ${bookingMoveIn} hari`,
-          description: `${room.bookingName || "Calon penghuni"} dijadwalkan masuk ${formatDate(room.bookingMoveInDate)}.`
-        });
-      }
-    }
 
     if (dueDate && dueIn !== null && dueIn < 0 && room.paymentStatus !== "Lunas") {
       reminders.push({
@@ -796,6 +754,29 @@ function buildReminders() {
     }
   });
 
+  activeMonthData().bookings.forEach((booking) => {
+    const moveIn = daysUntil(booking.plannedCheckIn);
+    const totalPaid = booking.dpAmount + booking.payment2Amount + booking.payment3Amount;
+
+    if (booking.paymentStatus === "Cicil") {
+      reminders.push({
+        category: "Cicilan",
+        priority: "Sedang",
+        title: `Pantau cicilan booking ${booking.roomId}`,
+        description: `${booking.prospectName} sudah bayar ${formatCurrency(totalPaid)}. Cek DP/Payment 2/Payment 3.`
+      });
+    }
+
+    if (booking.plannedCheckIn && moveIn !== null && moveIn >= 0 && moveIn <= 14) {
+      reminders.push({
+        category: "Proyek",
+        priority: moveIn <= 3 ? "Tinggi" : "Sedang",
+        title: `Calon penghuni ${booking.roomId} masuk dalam ${moveIn} hari`,
+        description: `${booking.prospectName} dijadwalkan check-in ${formatDate(booking.plannedCheckIn)}.`
+      });
+    }
+  });
+
   const boughtItems = currentMonthExpenses().map((expense) => expense.item.toLowerCase());
   const missingRoutine = routineItems.filter((item) => !boughtItems.includes(item.toLowerCase()));
 
@@ -829,6 +810,33 @@ function priorityClass(priority) {
     Sedang: "medium",
     Rendah: "low"
   }[priority];
+}
+
+function renderBookings() {
+  const bookings = [...activeMonthData().bookings].sort((a, b) => {
+    return (a.plannedCheckIn || "9999-12-31").localeCompare(b.plannedCheckIn || "9999-12-31");
+  });
+
+  bookingList.innerHTML = bookings.length ? bookings.map((booking) => {
+    const totalPaid = booking.dpAmount + booking.payment2Amount + booking.payment3Amount;
+
+    return `
+      <article class="booking-item">
+        <div>
+          <strong>${booking.roomId} · ${escapeHtml(booking.prospectName)}</strong>
+          <small>${booking.paymentStatus} · Check-in ${booking.plannedCheckIn ? formatDate(booking.plannedCheckIn) : "belum diisi"}</small>
+          ${booking.note ? `<p>${escapeHtml(booking.note)}</p>` : ""}
+        </div>
+        <div class="booking-payment-stack">
+          <span>DP ${formatCurrency(booking.dpAmount)}</span>
+          <span>Payment 2 ${formatCurrency(booking.payment2Amount)}</span>
+          <span>Payment 3 ${formatCurrency(booking.payment3Amount)}</span>
+          <strong>Total ${formatCurrency(totalPaid)}</strong>
+          <button class="small-button" type="button" data-delete-booking="${booking.id}">Hapus</button>
+        </div>
+      </article>
+    `;
+  }).join("") : `<div class="empty-state">Belum ada early booking untuk periode ini.</div>`;
 }
 
 function renderExpenses() {
@@ -987,11 +995,6 @@ detailPanel.addEventListener("change", (event) => {
     if (action === "resident-name") updated.residentName = event.target.value.trim();
     if (action === "check-in-date") updated.checkInDate = event.target.value;
     if (action === "check-out-date") updated.checkOutDate = event.target.value;
-    if (action === "booking-status") updated.bookingStatus = event.target.value;
-    if (action === "booking-name") updated.bookingName = event.target.value.trim();
-    if (action === "booking-dp") updated.bookingDpAmount = Number(event.target.value || 0);
-    if (action === "booking-move-in") updated.bookingMoveInDate = event.target.value;
-    if (action === "booking-note") updated.bookingNote = event.target.value.trim();
     if (action === "rent-scheme") updated.rentScheme = event.target.value;
     if (action === "payment") updated.paymentStatus = event.target.value;
     if (action === "room-status") updated.roomStatus = event.target.value;
@@ -1014,6 +1017,37 @@ detailPanel.addEventListener("click", (event) => {
       ...(room.notes || [])
     ]
   }));
+});
+
+bookingForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const booking = {
+    id: crypto.randomUUID(),
+    roomId: document.querySelector("#bookingRoomId").value,
+    prospectName: document.querySelector("#bookingProspectName").value.trim(),
+    paymentStatus: document.querySelector("#bookingPaymentStatus").value,
+    dpAmount: Number(document.querySelector("#bookingDpAmount").value || 0),
+    payment2Amount: Number(document.querySelector("#bookingPayment2Amount").value || 0),
+    payment3Amount: Number(document.querySelector("#bookingPayment3Amount").value || 0),
+    plannedCheckIn: document.querySelector("#bookingPlannedCheckIn").value,
+    note: document.querySelector("#bookingNote").value.trim()
+  };
+
+  if (!booking.roomId || !booking.prospectName || !booking.plannedCheckIn) return;
+
+  activeMonthData().bookings = [booking, ...activeMonthData().bookings];
+  bookingForm.reset();
+  bookingPlannedCheckIn.value = defaultExpenseDate();
+  render();
+});
+
+bookingList.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest("[data-delete-booking]");
+  if (!deleteButton) return;
+
+  activeMonthData().bookings = activeMonthData().bookings.filter((booking) => booking.id !== deleteButton.dataset.deleteBooking);
+  render();
 });
 
 shoppingForm.addEventListener("submit", (event) => {
@@ -1040,6 +1074,7 @@ monthSelect.addEventListener("change", () => {
   state.selectedYear = getSelectedYear();
   activeMonthData();
   updateExpenseDateForMonth();
+  bookingPlannedCheckIn.value = defaultExpenseDate();
   render();
 });
 
@@ -1051,6 +1086,7 @@ yearSelect.addEventListener("change", () => {
   state.selectedMonth = monthSelect.value;
   activeMonthData();
   updateExpenseDateForMonth();
+  bookingPlannedCheckIn.value = defaultExpenseDate();
   render();
 });
 
@@ -1066,6 +1102,7 @@ resetDataBtn.addEventListener("click", () => {
   renderMonthOptions(getSelectedYear());
   monthSelect.value = state.selectedMonth;
   updateExpenseDateForMonth();
+  bookingPlannedCheckIn.value = defaultExpenseDate();
   render();
 });
 

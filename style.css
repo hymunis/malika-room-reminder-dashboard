@@ -618,15 +618,10 @@ textarea:focus {
   margin-top: 14px;
 }
 
-.booking-panel {
+.booking-panel,
+.booking-section {
   display: grid;
   gap: 12px;
-  margin-top: 16px;
-  padding: 14px;
-  border: 1px solid #cfe0ff;
-  border-left: 5px solid var(--project);
-  border-radius: 8px;
-  background: linear-gradient(135deg, #f2f7ff, #ffffff 64%);
 }
 
 .booking-heading,
@@ -681,6 +676,63 @@ textarea:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+.booking-form {
+  display: grid;
+  grid-template-columns: 0.85fr 1.35fr 0.9fr repeat(3, 0.9fr);
+  gap: 10px;
+  align-items: end;
+}
+
+.booking-form .primary-button {
+  grid-column: 1 / -1;
+}
+
+.booking-list {
+  display: grid;
+  gap: 10px;
+}
+
+.booking-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #cfe0ff;
+  border-left: 5px solid var(--project);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f2f7ff, #ffffff 64%);
+}
+
+.booking-item strong {
+  display: block;
+  color: var(--ink);
+}
+
+.booking-item small,
+.booking-item p {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.booking-item p {
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+.booking-payment-stack {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.booking-payment-stack strong {
+  margin-top: 2px;
 }
 
 .wide-field {
@@ -909,11 +961,13 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .shopping-form {
+  .shopping-form,
+  .booking-form {
     grid-template-columns: 1fr 1fr;
   }
 
-  .shopping-form .primary-button {
+  .shopping-form .primary-button,
+  .booking-form .primary-button {
     grid-column: 1 / -1;
   }
 }
@@ -927,9 +981,11 @@ textarea:focus {
   .room-group-grid,
   .detail-grid,
   .shopping-form,
+  .booking-form,
   .tracker-grid,
   .booking-summary,
-  .booking-controls {
+  .booking-controls,
+  .booking-item {
     grid-template-columns: 1fr;
   }
 
@@ -942,11 +998,16 @@ textarea:focus {
   }
 
   .expense-item,
+  .booking-item,
   .reminder-title,
   .room-group-header,
   .tracker-card-top,
   .booking-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .booking-payment-stack {
+    text-align: left;
   }
 }

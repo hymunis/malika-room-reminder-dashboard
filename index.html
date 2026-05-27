@@ -49,6 +49,54 @@
             <div class="room-board" id="roomBoard"></div>
           </section>
 
+          <section class="section-block booking-section">
+            <div class="section-heading">
+              <div>
+                <h2>Early Booking Notes</h2>
+                <p>Catat calon penghuni yang booking atau sudah DP sebelum kamar tersedia.</p>
+              </div>
+            </div>
+            <form class="booking-form" id="bookingForm">
+              <label>
+                Nomor kamar
+                <select id="bookingRoomId" required></select>
+              </label>
+              <label>
+                Nama calon penghuni selanjutnya
+                <input id="bookingProspectName" placeholder="Nama calon penghuni" required>
+              </label>
+              <label>
+                Status pembayaran
+                <select id="bookingPaymentStatus" required>
+                  <option value="Lunas">Lunas</option>
+                  <option value="Cicil">Cicil</option>
+                </select>
+              </label>
+              <label>
+                DP
+                <input id="bookingDpAmount" type="number" min="0" step="1000" placeholder="0">
+              </label>
+              <label>
+                Payment 2
+                <input id="bookingPayment2Amount" type="number" min="0" step="1000" placeholder="0">
+              </label>
+              <label>
+                Payment 3
+                <input id="bookingPayment3Amount" type="number" min="0" step="1000" placeholder="0">
+              </label>
+              <label>
+                Rencana check-in
+                <input id="bookingPlannedCheckIn" type="date" required>
+              </label>
+              <label class="wide-field">
+                Catatan booking
+                <textarea id="bookingNote" placeholder="Contoh: masuk setelah kamar kosong, sudah DP, follow-up pelunasan."></textarea>
+              </label>
+              <button class="primary-button" type="submit">Tambah Booking</button>
+            </form>
+            <div class="booking-list" id="bookingList"></div>
+          </section>
+
           <section class="section-block shopping-section">
             <div class="section-heading">
               <div>
