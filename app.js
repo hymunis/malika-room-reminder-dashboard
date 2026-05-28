@@ -163,7 +163,8 @@ function createMonthData(monthKey, withSeedExpenses = false) {
   return {
     rooms: baseRooms.map((room) => ({ ...room, notes: [] })),
     bookings: [],
-    expenses: withSeedExpenses ? seedExpenses(monthKey) : []
+    expenses: withSeedExpenses ? seedExpenses(monthKey) : [],
+    carriedContextFrom: ""
   };
 }
 
@@ -192,7 +193,8 @@ function normalizeMonthData(monthData, monthKey) {
       };
     }),
     bookings: Array.isArray(monthData.bookings) ? monthData.bookings.map(normalizeBooking) : migrateRoomBookings(monthData.rooms || []),
-    expenses: Array.isArray(monthData.expenses) ? monthData.expenses : seedExpenses(monthKey)
+    expenses: Array.isArray(monthData.expenses) ? monthData.expenses : seedExpenses(monthKey),
+    carriedContextFrom: monthData.carriedContextFrom || ""
   };
 }
 
@@ -262,12 +264,14 @@ function activeMonthData() {
   const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
   if (!state.monthlyData[monthKey]) {
     state.monthlyData[monthKey] = createCarriedMonthData(monthKey);
+  } else {
+    hydrateCarriedRoomContext(monthKey, state.monthlyData[monthKey]);
   }
   return state.monthlyData[monthKey];
 }
 
 function createCarriedMonthData(monthKey) {
-  const previousKey = findPreviousMonthKey(monthKey);
+  const previousKey = findPreviousCarryMonthKey(monthKey);
   if (!previousKey) return createMonthData(monthKey, false);
 
   const previousData = state.monthlyData[previousKey];
@@ -277,8 +281,54 @@ function createCarriedMonthData(monthKey) {
       return createCarriedRoom(baseRoom, previousRoom);
     }),
     bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
-    expenses: []
+    expenses: [],
+    carriedContextFrom: previousKey
   };
+}
+
+function hydrateCarriedRoomContext(monthKey, monthData) {
+  if (monthData.carriedContextFrom) return;
+
+  const previousKey = findPreviousCarryMonthKey(monthKey);
+  if (!previousKey || !monthData) return;
+
+  const previousData = state.monthlyData[previousKey] || {};
+  monthData.rooms = baseRooms.map((baseRoom) => {
+    const currentRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
+    const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
+    return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom);
+  });
+  monthData.carriedContextFrom = previousKey;
+}
+
+function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom) {
+  const baseRentScheme = baseRoom.rentScheme || baseRoom.scheme;
+  const baseRoomStatus = baseRoom.roomStatus || "Normal";
+  const room = {
+    ...baseRoom,
+    ...currentRoom,
+    notes: [...(currentRoom.notes || [])]
+  };
+  const isGeneratedBlankRoom = !roomHasCarryContext(currentRoom, baseRoom) &&
+    !currentRoom.checkInDate &&
+    !currentRoom.paymentDueDate;
+
+  if (!room.residentName && previousRoom.residentName) room.residentName = previousRoom.residentName;
+  if (!room.checkOutDate && previousRoom.checkOutDate) room.checkOutDate = previousRoom.checkOutDate;
+  if ((room.rentScheme || baseRentScheme) === baseRentScheme && previousRoom.rentScheme) {
+    room.rentScheme = previousRoom.rentScheme;
+  }
+  if ((room.roomStatus || baseRoomStatus) === baseRoomStatus && previousRoom.roomStatus) {
+    room.roomStatus = previousRoom.roomStatus;
+  }
+  if (!room.notes.length && previousRoom.notes?.length) {
+    room.notes = [...previousRoom.notes];
+  }
+  if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === baseRoom.paymentStatus)) {
+    room.paymentStatus = "Belum Bayar";
+  }
+
+  return room;
 }
 
 function createCarriedRoom(baseRoom, previousRoom) {
@@ -296,11 +346,37 @@ function createCarriedRoom(baseRoom, previousRoom) {
   };
 }
 
+function findPreviousCarryMonthKey(monthKey) {
+  return Object.keys(state.monthlyData || {})
+    .filter((key) => key < monthKey && monthHasCarryContext(state.monthlyData[key]))
+    .sort()
+    .pop() || findPreviousMonthKey(monthKey);
+}
+
 function findPreviousMonthKey(monthKey) {
   return Object.keys(state.monthlyData || {})
     .filter((key) => key < monthKey)
     .sort()
     .pop();
+}
+
+function monthHasCarryContext(monthData) {
+  return (monthData?.rooms || []).some((room) => {
+    const baseRoom = baseRooms.find((item) => item.id === room.id) || {};
+    return roomHasCarryContext(room, baseRoom);
+  });
+}
+
+function roomHasCarryContext(room, baseRoom) {
+  const baseRentScheme = baseRoom.rentScheme || baseRoom.scheme;
+  const baseRoomStatus = baseRoom.roomStatus || "Normal";
+  return Boolean(
+    room?.residentName ||
+    room?.checkOutDate ||
+    (room?.notes || []).length ||
+    (room?.rentScheme && room.rentScheme !== baseRentScheme) ||
+    (room?.roomStatus && room.roomStatus !== baseRoomStatus)
+  );
 }
 
 function selectedMonthName() {
