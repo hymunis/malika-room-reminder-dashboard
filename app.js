@@ -272,9 +272,27 @@ function createCarriedMonthData(monthKey) {
 
   const previousData = state.monthlyData[previousKey];
   return {
-    rooms: (previousData.rooms || []).map((room) => ({ ...room, paymentDueDate: "", notes: [...(room.notes || [])] })),
+    rooms: baseRooms.map((baseRoom) => {
+      const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
+      return createCarriedRoom(baseRoom, previousRoom);
+    }),
     bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
     expenses: []
+  };
+}
+
+function createCarriedRoom(baseRoom, previousRoom) {
+  return {
+    ...baseRoom,
+    residentName: previousRoom.residentName || "",
+    checkInDate: "",
+    paymentDueDate: "",
+    checkOutDate: previousRoom.checkOutDate || "",
+    rentScheme: previousRoom.rentScheme || baseRoom.rentScheme || baseRoom.scheme,
+    paymentStatus: "Belum Bayar",
+    roomStatus: previousRoom.roomStatus || baseRoom.roomStatus || "Normal",
+    acStatus: previousRoom.acStatus || baseRoom.acStatus,
+    notes: [...(previousRoom.notes || [])]
   };
 }
 
