@@ -13,7 +13,6 @@ const firstTrackingYear = 2026;
 const lastTrackingYear = 2051;
 const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"];
 const roomStatusOptions = ["Terisi", "Kosong", "Renovasi/Upgrade", "Maintenance"];
-const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
 const debtCategoryOptions = ["Biaya Internet", "Pembelian Barang", "Pembayaran Jasa", "Lainnya"];
 const baseFacilityTasks = [
   { id: "clean-water-tank", title: "Cleaning Torn Air" },
@@ -29,16 +28,16 @@ const roomTypeGroups = [
 ];
 
 const baseRooms = [
-  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B7", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B7", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "A6", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "A8", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "A2", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
@@ -47,6 +46,7 @@ const baseRooms = [
   { id: "B8", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "B9", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" }
 ];
+const acRoomIds = baseRooms.filter((room) => room.hasAc).map((room) => room.id).sort();
 
 let state = loadState();
 let selectedRoomId = state.selectedRoomId || "A4";
@@ -66,6 +66,8 @@ const acPriorityList = document.querySelector("#acPriorityList");
 const roomProjectPriorityList = document.querySelector("#roomProjectPriorityList");
 const facilityPriorityList = document.querySelector("#facilityPriorityList");
 const facilityTaskList = document.querySelector("#facilityTaskList");
+const acServiceTaskList = document.querySelector("#acServiceTaskList");
+const acServiceRoomFilter = document.querySelector("#acServiceRoomFilter");
 const bookingForm = document.querySelector("#bookingForm");
 const bookingRoomId = document.querySelector("#bookingRoomId");
 const bookingPlannedCheckIn = document.querySelector("#bookingPlannedCheckIn");
@@ -90,6 +92,10 @@ renderMonthOptions(initialYear);
 monthSelect.value = state.selectedMonth || defaultMonthKey;
 updatePeriodFormDates();
 bookingRoomId.innerHTML = baseRooms.map((room) => `<option value="${room.id}">${room.id}</option>`).join("");
+acServiceRoomFilter.innerHTML = [
+  `<option value="">Semua kamar AC</option>`,
+  ...acRoomIds.map((roomId) => `<option value="${roomId}">${roomId}</option>`)
+].join("");
 bookingPlannedCheckIn.value = defaultExpenseDate();
 
 function loadState() {
@@ -106,6 +112,7 @@ function normalizeStoredState(stored) {
       [defaultMonthKey]: createMonthData(defaultMonthKey, true)
     },
     facilityTasks: normalizeFacilityTasks([]),
+    acServiceTasks: normalizeAcServiceTasks([]),
     selectedMonth: defaultMonthKey,
     selectedYear: currentYear,
     selectedRoomId: "A4"
@@ -126,6 +133,7 @@ function normalizeStoredState(stored) {
     return {
       monthlyData,
       facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
+      acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: stored.selectedMonth || defaultMonthKey,
       selectedYear: stored.selectedYear || getYearFromMonthKey(stored.selectedMonth || defaultMonthKey),
       selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
@@ -141,6 +149,7 @@ function normalizeStoredState(stored) {
         }, defaultMonthKey)
       },
       facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
+      acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: defaultMonthKey,
       selectedYear: currentYear,
       selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
@@ -158,6 +167,21 @@ function normalizeFacilityTasks(tasks = []) {
       lastCompletedDate: savedTask.lastCompletedDate || "",
       nextDueDate: savedTask.nextDueDate || "",
       note: savedTask.note || "",
+      history: Array.isArray(savedTask.history) ? savedTask.history : []
+    };
+  });
+}
+
+function normalizeAcServiceTasks(tasks = []) {
+  return acRoomIds.map((roomId) => {
+    const savedTask = tasks.find((task) => task.roomId === roomId) || {};
+    return {
+      id: savedTask.id || `ac-${roomId.toLowerCase()}`,
+      roomId,
+      lastCompletedDate: savedTask.lastCompletedDate || "",
+      nextDueDate: savedTask.nextDueDate || "",
+      note: savedTask.note || "",
+      isCompleted: Boolean(savedTask.isCompleted),
       history: Array.isArray(savedTask.history) ? savedTask.history : []
     };
   });
@@ -203,7 +227,6 @@ function normalizeMonthData(monthData, monthKey) {
         scheme: baseRoom.scheme,
         rate: baseRoom.rate,
         hasAc: baseRoom.hasAc,
-        acStatus: baseRoom.hasAc ? roomData.acStatus || baseRoom.acStatus : undefined,
         paymentStatus: normalizeRoomPaymentStatus(roomData.paymentStatus || baseRoom.paymentStatus),
         roomStatus: normalizeRoomStatus(roomData.roomStatus || baseRoom.roomStatus),
         residentName: roomData.residentName || "",
@@ -353,7 +376,6 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom) {
     scheme: baseRoom.scheme,
     rate: baseRoom.rate,
     hasAc: baseRoom.hasAc,
-    acStatus: baseRoom.hasAc ? currentRoom.acStatus || previousRoom.acStatus || baseRoom.acStatus : undefined,
     notes: [...(currentRoom.notes || [])]
   };
   const isGeneratedBlankRoom = !roomHasCarryContext(currentRoom, baseRoom) &&
@@ -384,7 +406,6 @@ function createCarriedRoom(baseRoom, previousRoom) {
     checkOutDate: previousRoom.checkOutDate || "",
     paymentStatus: "Belum Bayar",
     roomStatus: previousRoom.roomStatus || baseRoom.roomStatus || "Terisi",
-    acStatus: previousRoom.acStatus || baseRoom.acStatus,
     notes: [...(previousRoom.notes || [])]
   };
 }
@@ -552,17 +573,15 @@ function getRoomTone(room) {
   if (
     room.paymentStatus === "Belum Bayar" ||
     room.paymentStatus === "Dispensasi" ||
-    room.roomStatus === "Maintenance" ||
-    room.acStatus === "Perlu Service" ||
-    room.acStatus === "Service Terjadwal"
+    room.roomStatus === "Maintenance"
   ) return "warning";
 
   return "safe";
 }
 
 function pillTone(value) {
-  if (["Telat", "Denda (> 1 Minggu)", "Perlu Service"].includes(value)) return "danger";
-  if (["Belum Bayar", "Dispensasi", "Maintenance", "Service Terjadwal"].includes(value)) return "warning";
+  if (["Telat", "Denda (> 1 Minggu)"].includes(value)) return "danger";
+  if (["Belum Bayar", "Dispensasi", "Maintenance"].includes(value)) return "warning";
   if (value === "Renovasi/Upgrade") return "project";
   if (value === "Lunas" || value === "Terisi" || value === "Aman" || value === "Selesai Service") return "safe";
   return "";
@@ -574,6 +593,7 @@ function render() {
   renderRoomBoard();
   renderDetail();
   renderFacilityTasks();
+  renderAcServiceTasks();
   renderBookings();
   renderDebts();
   saveState();
@@ -582,7 +602,6 @@ function render() {
 function renderSummary() {
   const rooms = activeMonthData().rooms;
   const paymentFollowUp = rooms.filter((room) => ["Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"].includes(room.paymentStatus)).length;
-  const acService = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus)).length;
   const projects = rooms.filter((room) => ["Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus)).length;
   const unpaidDebts = currentOutstandingDebts();
   const unpaidDebtTotal = unpaidDebts.reduce((total, debt) => total + Number(debt.amount), 0);
@@ -590,7 +609,6 @@ function renderSummary() {
   const cards = [
     { label: "Total kamar", value: rooms.length, hint: `Periode ${selectedMonthName()}` },
     { label: "Pembayaran perlu follow-up", value: paymentFollowUp, hint: "Belum bayar, telat, dispensasi" },
-    { label: "AC perlu service", value: acService, hint: "Hanya kamar Deluxe & Eksklusif" },
     { label: "Kamar renovasi/upgrade", value: projects, hint: "Termasuk maintenance" },
     { label: "Hutang belum lunas", value: formatCurrency(unpaidDebtTotal), hint: `${unpaidDebts.length} transaksi perlu ditutup` }
   ];
@@ -629,8 +647,6 @@ function renderRoomBoard() {
 function renderRoomCard(room) {
   const tone = getRoomTone(room);
   const active = room.id === selectedRoomId ? "active" : "";
-  const acText = room.hasAc ? `AC: ${room.acStatus}` : "Tanpa AC";
-
   return `
     <button class="room-card ${tone} ${active}" type="button" data-room-id="${room.id}">
       <div class="room-topline">
@@ -650,7 +666,6 @@ function renderRoomCard(room) {
       <div class="pill-row">
         <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
         <span class="pill ${pillTone(room.roomStatus)}">${room.roomStatus}</span>
-        <span class="pill ${pillTone(room.acStatus)}">${acText}</span>
       </div>
     </button>
   `;
@@ -706,16 +721,8 @@ function renderDetail() {
         <strong>${room.checkOutDate ? formatDate(room.checkOutDate) : "Belum diisi"}</strong>
       </div>
       <div class="info-tile">
-        <span>Fasilitas AC</span>
-        <strong>${room.hasAc ? "Ada AC" : "Tidak ada AC"}</strong>
-      </div>
-      <div class="info-tile">
         <span>Status kamar</span>
         <strong>${room.roomStatus}</strong>
-      </div>
-      <div class="info-tile">
-        <span>Status AC</span>
-        <strong>${room.hasAc ? room.acStatus : "Tidak berlaku"}</strong>
       </div>
     </div>
 
@@ -754,15 +761,6 @@ function renderDetail() {
         </select>
       </label>
 
-      ${room.hasAc ? `
-        <label>
-          Update service AC
-          <select data-action="ac-status">
-            ${acStatusOptions.map((option) => `<option value="${option}" ${room.acStatus === option ? "selected" : ""}>${option}</option>`).join("")}
-          </select>
-        </label>
-      ` : ""}
-
       <label>
         Tambah catatan
         <textarea id="noteInput" placeholder="Contoh: penghuni janji bayar Jumat, cek lampu kamar mandi, jadwalkan teknisi."></textarea>
@@ -786,20 +784,27 @@ function renderDetail() {
 function renderPriorityDashboard() {
   const rooms = activeMonthData().rooms;
   const paymentRooms = rooms.filter((room) => ["Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"].includes(room.paymentStatus));
-  const acRooms = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus));
   const projectRooms = rooms.filter((room) => ["Kosong", "Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus));
   const facilityTasks = state.facilityTasks.filter((task) => getFacilityTaskStatus(task).tone !== "safe");
+  const acTasks = state.acServiceTasks.filter((task) => getAcServiceTaskStatus(task).tone !== "safe");
 
   paymentPriorityList.innerHTML = renderRoomPriorityItems(
     paymentRooms,
     (room) => room.paymentStatus,
     (room) => room.paymentDueDate ? `Tanggal bayar ${formatDate(room.paymentDueDate)}` : "Tanggal bayar belum diisi"
   );
-  acPriorityList.innerHTML = renderRoomPriorityItems(
-    acRooms,
-    (room) => room.acStatus,
-    () => "Pastikan jadwal teknisi dan akses kamar sudah dikonfirmasi"
-  );
+  acPriorityList.innerHTML = acTasks.length ? acTasks.map((task) => {
+    const status = getAcServiceTaskStatus(task);
+    return `
+      <article class="priority-item">
+        <div>
+          <strong>AC kamar ${task.roomId}</strong>
+          <small>${status.detail}</small>
+        </div>
+        <span class="pill ${status.tone}">${status.label}</span>
+      </article>
+    `;
+  }).join("") : `<div class="empty-state">Tidak ada jadwal service AC yang perlu ditindaklanjuti.</div>`;
   roomProjectPriorityList.innerHTML = renderRoomPriorityItems(
     projectRooms,
     (room) => room.roomStatus,
@@ -866,6 +871,45 @@ function renderFacilityTasks() {
   }).join("");
 }
 
+function renderAcServiceTasks() {
+  const tasks = state.acServiceTasks.filter((task) => !acServiceRoomFilter.value || task.roomId === acServiceRoomFilter.value);
+  acServiceTaskList.innerHTML = tasks.map((task) => {
+    const status = getAcServiceTaskStatus(task);
+    return `
+      <article class="facility-item">
+        <div class="facility-item-header">
+          <div>
+            <h3>Service AC kamar ${task.roomId}</h3>
+            <p>${status.detail}</p>
+          </div>
+          <span class="pill ${status.tone}">${status.label}</span>
+        </div>
+        <label class="facility-check">
+          <input type="checkbox" data-complete-ac-service="${task.id}" ${task.isCompleted ? "checked" : ""}>
+          Service sudah selesai
+        </label>
+        <div class="facility-controls">
+          <label>
+            Terakhir service
+            <input type="date" data-ac-service-field="lastCompletedDate" data-ac-service-id="${task.id}" value="${task.lastCompletedDate}">
+          </label>
+          <label>
+            Jadwal service berikutnya
+            <input type="date" data-ac-service-field="nextDueDate" data-ac-service-id="${task.id}" value="${task.nextDueDate}">
+          </label>
+          <label class="wide-field">
+            Catatan
+            <textarea data-ac-service-field="note" data-ac-service-id="${task.id}" placeholder="Contoh: teknisi, biaya, atau kondisi AC.">${escapeHtml(task.note)}</textarea>
+          </label>
+        </div>
+        <div class="facility-footer">
+          <small>${task.history.length ? `${task.history.length} service tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat service"}</small>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
 function getFacilityTaskStatus(task) {
   if (!task.nextDueDate) {
     return {
@@ -895,6 +939,17 @@ function getFacilityTaskStatus(task) {
     detail: `Jadwal berikutnya ${formatDate(task.nextDueDate)}`,
     tone: "safe"
   };
+}
+
+function getAcServiceTaskStatus(task) {
+  if (task.isCompleted) {
+    return {
+      label: "Selesai",
+      detail: task.lastCompletedDate ? `Service terakhir ${formatDate(task.lastCompletedDate)}` : "Service sudah ditandai selesai.",
+      tone: "safe"
+    };
+  }
+  return getFacilityTaskStatus(task);
 }
 
 function renderBookings() {
@@ -1122,7 +1177,6 @@ detailPanel.addEventListener("change", (event) => {
     if (action === "check-out-date") updated.checkOutDate = event.target.value;
     if (action === "payment") updated.paymentStatus = event.target.value;
     if (action === "room-status") updated.roomStatus = event.target.value;
-    if (action === "ac-status") updated.acStatus = event.target.value;
     return updated;
   });
 });
@@ -1163,6 +1217,31 @@ facilityTaskList.addEventListener("click", (event) => {
     if (task.id !== button.dataset.completeFacility) return task;
     const history = task.history[0] === completedDate ? task.history : [completedDate, ...task.history];
     return { ...task, lastCompletedDate: completedDate, history };
+  });
+  render();
+});
+
+acServiceRoomFilter.addEventListener("change", () => {
+  renderAcServiceTasks();
+});
+
+acServiceTaskList.addEventListener("change", (event) => {
+  const taskId = event.target.dataset.acServiceId || event.target.dataset.completeAcService;
+  if (!taskId) return;
+
+  state.acServiceTasks = state.acServiceTasks.map((task) => {
+    if (task.id !== taskId) return task;
+    if (event.target.dataset.completeAcService) {
+      const completedDate = localDateString(new Date());
+      const history = event.target.checked && task.history[0] !== completedDate ? [completedDate, ...task.history] : task.history;
+      return {
+        ...task,
+        isCompleted: event.target.checked,
+        lastCompletedDate: event.target.checked ? completedDate : task.lastCompletedDate,
+        history
+      };
+    }
+    return { ...task, [event.target.dataset.acServiceField]: event.target.value.trim(), isCompleted: false };
   });
   render();
 });

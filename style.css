@@ -190,7 +190,7 @@ h3 {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
   gap: 12px;
   margin-bottom: 18px;
 }
@@ -1033,6 +1033,14 @@ textarea:focus {
   gap: 12px;
 }
 
+.facility-subheading {
+  margin-top: 24px;
+}
+
+.facility-filter {
+  width: min(220px, 100%);
+}
+
 .facility-item {
   display: grid;
   gap: 12px;
@@ -1071,6 +1079,19 @@ textarea:focus {
 
 .facility-controls textarea {
   min-height: 72px;
+}
+
+.facility-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.facility-check input {
+  width: 17px;
+  min-height: 17px;
+  accent-color: var(--safe);
 }
 
 .facility-footer {

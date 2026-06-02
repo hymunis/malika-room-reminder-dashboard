@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malika Room Reminder Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260602-facilities">
+  <link rel="stylesheet" href="style.css?v=20260602-ac-facilities">
 </head>
 <body>
   <div class="app-shell">
@@ -121,10 +121,21 @@
           <div class="section-heading">
             <div>
               <h2>Informasi Luar Kamar</h2>
-              <p>Atur jadwal berikutnya dan catat penyelesaian pekerjaan operasional di luar kamar.</p>
+              <p>Atur jadwal berikutnya dan catat penyelesaian pekerjaan operasional bersama, termasuk service AC kamar.</p>
             </div>
           </div>
           <div class="facility-list" id="facilityTaskList"></div>
+          <div class="section-heading facility-subheading">
+            <div>
+              <h2>Service AC Kamar</h2>
+              <p>Jadwalkan service AC per kamar Eksklusif dan Deluxe, lalu centang ketika pekerjaan selesai.</p>
+            </div>
+            <label class="facility-filter">
+              Pilih kamar AC
+              <select id="acServiceRoomFilter"></select>
+            </label>
+          </div>
+          <div class="facility-list" id="acServiceTaskList"></div>
         </section>
       </section>
 
@@ -239,6 +250,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260602-facilities"></script>
+  <script src="app.js?v=20260602-ac-facilities"></script>
 </body>
 </html>

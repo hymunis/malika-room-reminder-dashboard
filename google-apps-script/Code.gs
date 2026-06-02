@@ -61,10 +61,11 @@ function saveState_(state) {
 }
 
 function syncReadableTabs_(state) {
-  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Tanggal Bayar", "Check-in", "Check-out", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
+  const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Tanggal Bayar", "Check-in", "Check-out", "Pembayaran", "Status Kamar", "Jumlah Catatan"]];
   const bookingRows = [["Bulan", "Kamar", "Nama Calon Penghuni", "Status Pembayaran", "DP", "DP Paid", "Payment 1", "Payment 1 Paid", "Payment 2", "Payment 2 Paid", "Total Tagihan", "Total Terbayar", "Rencana Check-in", "Catatan Booking", "ID"]];
   const debtRows = [["Bulan", "Tanggal", "Kategori", "Keterangan", "Nominal", "Sudah Lunas", "Tanggal Pelunasan", "Catatan", "ID"]];
   const facilityRows = [["Aktivitas", "Terakhir Selesai", "Jadwal Berikutnya", "Catatan", "Jumlah Penyelesaian", "ID"]];
+  const acServiceRows = [["Kamar", "Terakhir Service", "Jadwal Berikutnya", "Selesai", "Catatan", "Jumlah Service", "ID"]];
 
   Object.keys(state.monthlyData || {}).sort().forEach((monthKey) => {
     const monthData = state.monthlyData[monthKey] || {};
@@ -81,7 +82,6 @@ function syncReadableTabs_(state) {
         room.checkOutDate || "",
         room.paymentStatus || "",
         room.roomStatus || "",
-        room.acStatus || "Tidak berlaku",
         (room.notes || []).length
       ]);
     });
@@ -138,11 +138,23 @@ function syncReadableTabs_(state) {
       task.id || ""
     ]);
   });
+  (state.acServiceTasks || []).forEach((task) => {
+    acServiceRows.push([
+      task.roomId || "",
+      task.lastCompletedDate || "",
+      task.nextDueDate || "",
+      task.isCompleted ? "TRUE" : "FALSE",
+      task.note || "",
+      (task.history || []).length,
+      task.id || ""
+    ]);
+  });
 
   writeRows_(ROOMS_SHEET_NAME, roomsRows);
   writeRows_(BOOKINGS_SHEET_NAME, bookingRows);
   writeRows_(DEBTS_SHEET_NAME, debtRows);
   writeRows_(FACILITIES_SHEET_NAME, facilityRows);
+  writeRows_("AC Service", acServiceRows);
 }
 
 function getPaymentDueDate_(room) {
