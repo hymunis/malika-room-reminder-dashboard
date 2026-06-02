@@ -9,6 +9,8 @@ const monthNames = [
 const now = new Date();
 const currentYear = now.getFullYear();
 const defaultMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+const firstTrackingYear = 2026;
+const lastTrackingYear = 2051;
 const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"];
 const roomStatusOptions = ["Terisi", "Kosong", "Renovasi/Upgrade", "Maintenance"];
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
@@ -252,12 +254,9 @@ function migrateRoomBookings(rooms) {
 }
 
 function renderYearOptions(activeYear) {
-  const storedYears = Object.keys(state.monthlyData || {}).map(getYearFromMonthKey);
-  const minYear = Math.min(currentYear - 1, activeYear, ...storedYears);
-  const maxYear = Math.max(currentYear + 10, activeYear, ...storedYears);
   const years = [];
 
-  for (let year = minYear; year <= maxYear; year += 1) {
+  for (let year = firstTrackingYear; year <= lastTrackingYear; year += 1) {
     years.push(year);
   }
 
