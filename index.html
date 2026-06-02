@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malika Room Reminder Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260602-ac-facilities">
+  <link rel="stylesheet" href="style.css?v=20260602-rate-settings">
 </head>
 <body>
   <div class="app-shell">
@@ -81,6 +81,42 @@
       </section>
 
       <section class="tab-panel" data-tab-panel="rooms">
+        <details class="rate-settings section-block">
+          <summary>
+            <div>
+              <h2>Penyesuaian Harga</h2>
+              <p>Atur tarif aktif per tipe kamar. Perubahan berlaku untuk seluruh periode.</p>
+            </div>
+            <span>Atur tarif</span>
+          </summary>
+          <form class="rate-settings-form" id="rateSettingsForm">
+            <label>
+              Standard Room
+              <small>Bulanan</small>
+              <input data-room-rate="Standard" type="number" min="1" step="1000" required>
+            </label>
+            <label>
+              Plus Room
+              <small>Semesteran, 6 bulan</small>
+              <input data-room-rate="Plus Room" type="number" min="1" step="1000" required>
+            </label>
+            <label>
+              Eksklusif Room
+              <small>Tahunan</small>
+              <input data-room-rate="Eksklusif" type="number" min="1" step="1000" required>
+            </label>
+            <label>
+              Deluxe Room
+              <small>Tahunan</small>
+              <input data-room-rate="Deluxe" type="number" min="1" step="1000" required>
+            </label>
+            <div class="rate-settings-actions">
+              <small id="rateSettingsStatus">Tarif tersimpan bersama data dashboard.</small>
+              <button class="primary-button" type="submit">Simpan Harga</button>
+            </div>
+          </form>
+        </details>
+
         <section class="summary-grid" id="summaryGrid" aria-label="Ringkasan operasional"></section>
 
         <section class="workspace-grid">
@@ -250,6 +286,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260602-room-rates"></script>
+  <script src="app.js?v=20260602-rate-settings"></script>
 </body>
 </html>

@@ -26,6 +26,12 @@ const roomTypeGroups = [
   { type: "Eksklusif", description: "Tahunan, ber-AC", tone: "exclusive" },
   { type: "Deluxe", description: "Tahunan, ber-AC", tone: "deluxe" }
 ];
+const defaultRoomRates = {
+  Standard: 800000,
+  "Plus Room": 6500000,
+  Eksklusif: 15500000,
+  Deluxe: 17500000
+};
 
 const baseRooms = [
   { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 17500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
@@ -84,6 +90,8 @@ const resetDataBtn = document.querySelector("#resetDataBtn");
 const yearSelect = document.querySelector("#yearSelect");
 const monthSelect = document.querySelector("#monthSelect");
 const syncStatus = document.querySelector("#syncStatus");
+const rateSettingsForm = document.querySelector("#rateSettingsForm");
+const rateSettingsStatus = document.querySelector("#rateSettingsStatus");
 
 const initialYear = getYearFromMonthKey(state.selectedMonth || defaultMonthKey);
 renderYearOptions(initialYear);
@@ -107,10 +115,12 @@ function loadState() {
 }
 
 function normalizeStoredState(stored) {
+  const roomRates = normalizeRoomRates(stored?.roomRates);
   const fallback = {
     monthlyData: {
-      [defaultMonthKey]: createMonthData(defaultMonthKey, true)
+      [defaultMonthKey]: createMonthData(defaultMonthKey, true, roomRates)
     },
+    roomRates,
     facilityTasks: normalizeFacilityTasks([]),
     acServiceTasks: normalizeAcServiceTasks([]),
     selectedMonth: defaultMonthKey,
@@ -124,14 +134,15 @@ function normalizeStoredState(stored) {
     const monthlyData = {};
     Object.keys(stored.monthlyData).forEach((monthKey) => {
       const savedMonth = stored.monthlyData[monthKey];
-      monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey);
+      monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey, roomRates);
     });
     if (!monthlyData[defaultMonthKey]) {
-      monthlyData[defaultMonthKey] = createMonthData(defaultMonthKey, true);
+      monthlyData[defaultMonthKey] = createMonthData(defaultMonthKey, true, roomRates);
     }
 
     return {
       monthlyData,
+      roomRates,
       facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
       acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: stored.selectedMonth || defaultMonthKey,
@@ -146,8 +157,9 @@ function normalizeStoredState(stored) {
         [defaultMonthKey]: normalizeMonthData({
           rooms: stored.rooms,
           expenses: Array.isArray(stored.expenses) ? stored.expenses : seedExpenses(defaultMonthKey)
-        }, defaultMonthKey)
+        }, defaultMonthKey, roomRates)
       },
+      roomRates,
       facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
       acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: defaultMonthKey,
@@ -157,6 +169,17 @@ function normalizeStoredState(stored) {
   }
 
   return fallback;
+}
+
+function normalizeRoomRates(roomRates = {}) {
+  return Object.fromEntries(roomTypeGroups.map(({ type }) => {
+    const savedRate = Number(roomRates[type]);
+    return [type, savedRate > 0 ? savedRate : defaultRoomRates[type]];
+  }));
+}
+
+function configuredRateForRoom(room, roomRates = defaultRoomRates) {
+  return Number(roomRates[room.type]) || defaultRoomRates[room.type] || Number(room.rate || 0);
 }
 
 function normalizeFacilityTasks(tasks = []) {
@@ -197,9 +220,9 @@ function saveState() {
   }
 }
 
-function createMonthData(monthKey, withSeedExpenses = false) {
+function createMonthData(monthKey, withSeedExpenses = false, roomRates = defaultRoomRates) {
   return {
-    rooms: baseRooms.map((room) => ({ ...room, notes: [] })),
+    rooms: baseRooms.map((room) => ({ ...room, rate: configuredRateForRoom(room, roomRates), notes: [] })),
     bookings: [],
     expenses: withSeedExpenses ? seedExpenses(monthKey) : [],
     debts: [],
@@ -207,7 +230,7 @@ function createMonthData(monthKey, withSeedExpenses = false) {
   };
 }
 
-function normalizeMonthData(monthData, monthKey) {
+function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates) {
   return {
     rooms: baseRooms.map((baseRoom) => {
       const savedRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
@@ -225,7 +248,7 @@ function normalizeMonthData(monthData, monthKey) {
         ...roomData,
         type: baseRoom.type,
         scheme: baseRoom.scheme,
-        rate: baseRoom.rate,
+        rate: configuredRateForRoom(baseRoom, roomRates),
         hasAc: baseRoom.hasAc,
         paymentStatus: normalizeRoomPaymentStatus(roomData.paymentStatus || baseRoom.paymentStatus),
         roomStatus: normalizeRoomStatus(roomData.roomStatus || baseRoom.roomStatus),
@@ -337,13 +360,13 @@ function activeMonthData() {
 
 function createCarriedMonthData(monthKey) {
   const previousKey = findPreviousCarryMonthKey(monthKey);
-  if (!previousKey) return createMonthData(monthKey, false);
+  if (!previousKey) return createMonthData(monthKey, false, state.roomRates);
 
   const previousData = state.monthlyData[previousKey];
   return {
     rooms: baseRooms.map((baseRoom) => {
       const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
-      return createCarriedRoom(baseRoom, previousRoom);
+      return createCarriedRoom(baseRoom, previousRoom, state.roomRates);
     }),
     bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
     expenses: [],
@@ -362,19 +385,19 @@ function hydrateCarriedRoomContext(monthKey, monthData) {
   monthData.rooms = baseRooms.map((baseRoom) => {
     const currentRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
     const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
-    return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom);
+    return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, state.roomRates);
   });
   monthData.carriedContextFrom = previousKey;
 }
 
-function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom) {
+function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates = defaultRoomRates) {
   const baseRoomStatus = baseRoom.roomStatus || "Terisi";
   const room = {
     ...baseRoom,
     ...currentRoom,
     type: baseRoom.type,
     scheme: baseRoom.scheme,
-    rate: baseRoom.rate,
+    rate: configuredRateForRoom(baseRoom, roomRates),
     hasAc: baseRoom.hasAc,
     notes: [...(currentRoom.notes || [])]
   };
@@ -397,9 +420,10 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom) {
   return room;
 }
 
-function createCarriedRoom(baseRoom, previousRoom) {
+function createCarriedRoom(baseRoom, previousRoom, roomRates = defaultRoomRates) {
   return {
     ...baseRoom,
+    rate: configuredRateForRoom(baseRoom, roomRates),
     residentName: previousRoom.residentName || "",
     checkInDate: "",
     paymentDueDate: "",
@@ -588,6 +612,7 @@ function pillTone(value) {
 }
 
 function render() {
+  renderRoomRateSettings();
   renderSummary();
   renderPriorityDashboard();
   renderRoomBoard();
@@ -597,6 +622,21 @@ function render() {
   renderBookings();
   renderDebts();
   saveState();
+}
+
+function renderRoomRateSettings() {
+  rateSettingsForm.querySelectorAll("[data-room-rate]").forEach((input) => {
+    input.value = state.roomRates[input.dataset.roomRate];
+  });
+}
+
+function applyRoomRates() {
+  Object.values(state.monthlyData || {}).forEach((monthData) => {
+    monthData.rooms = (monthData.rooms || []).map((room) => ({
+      ...room,
+      rate: configuredRateForRoom(room, state.roomRates)
+    }));
+  });
 }
 
 function renderSummary() {
@@ -1155,6 +1195,19 @@ tabButtons.forEach((button) => {
     tabButtons.forEach((item) => item.classList.toggle("active", item === button));
     tabPanels.forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === button.dataset.tabTarget));
   });
+});
+
+rateSettingsForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const requestedRates = {};
+  rateSettingsForm.querySelectorAll("[data-room-rate]").forEach((input) => {
+    requestedRates[input.dataset.roomRate] = Number(input.value);
+  });
+  state.roomRates = normalizeRoomRates(requestedRates);
+  applyRoomRates();
+  rateSettingsStatus.textContent = "Harga terbaru sudah disimpan dan berlaku untuk seluruh periode.";
+  render();
 });
 
 roomBoard.addEventListener("click", (event) => {

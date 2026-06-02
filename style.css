@@ -195,6 +195,67 @@ h3 {
   margin-bottom: 18px;
 }
 
+.rate-settings {
+  margin-bottom: 18px;
+}
+
+.rate-settings summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.rate-settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.rate-settings summary p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.rate-settings summary > span {
+  flex: 0 0 auto;
+  color: var(--project);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.rate-settings[open] summary {
+  margin-bottom: 16px;
+}
+
+.rate-settings-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rate-settings-form label {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.rate-settings-form label small,
+.rate-settings-actions small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.rate-settings-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .tab-nav {
   display: flex;
   gap: 8px;
@@ -1158,7 +1219,8 @@ textarea:focus {
   }
 
   .debt-form,
-  .booking-form {
+  .booking-form,
+  .rate-settings-form {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -1182,7 +1244,8 @@ textarea:focus {
     .booking-controls,
     .booking-item,
     .debt-item,
-    .facility-controls {
+    .facility-controls,
+    .rate-settings-form {
     grid-template-columns: 1fr;
   }
 
@@ -1209,8 +1272,14 @@ textarea:focus {
 
   .booking-row-actions,
   .booking-form-actions,
-  .debt-form-actions {
+  .debt-form-actions,
+  .rate-settings-actions {
     justify-content: flex-start;
+  }
+
+  .rate-settings-actions {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .tab-nav {
