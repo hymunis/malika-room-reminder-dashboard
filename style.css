@@ -195,6 +195,46 @@ h3 {
   margin-bottom: 18px;
 }
 
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 6px;
+  border: 1px solid rgba(215, 227, 243, 0.86);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.tab-button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 16px;
+  font-weight: 900;
+}
+
+.tab-button:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.tab-button.active {
+  background: var(--ink);
+  color: #fff;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
 .summary-card {
   min-height: 112px;
   padding: 16px;
@@ -784,7 +824,7 @@ textarea:focus {
 
 .note-item,
 .reminder-item,
-.expense-item {
+.debt-item {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -800,14 +840,14 @@ textarea:focus {
 }
 
 .note-item small,
-.expense-item small,
+.debt-item small,
 .reminder-item small {
   color: var(--muted);
   font-weight: 700;
 }
 
 .reminder-list,
-.expense-list {
+.debt-list {
   display: grid;
   gap: 10px;
 }
@@ -853,109 +893,99 @@ textarea:focus {
   text-transform: uppercase;
 }
 
-.shopping-form {
+.debt-form {
   display: grid;
-  grid-template-columns: 1.1fr 1.3fr 1fr 1fr auto;
+  grid-template-columns: 1fr 1.7fr 1fr 1fr;
   gap: 10px;
   align-items: end;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
-.expense-tracker {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.tracker-heading {
+.debt-form-actions {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.tracker-heading h3 {
-  margin-bottom: 4px;
-  color: var(--ink);
-  font-size: 0.98rem;
-}
-
-.tracker-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-column: 1 / -1;
   gap: 10px;
+  justify-content: flex-end;
 }
 
-.tracker-card {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--safe);
+.debt-form .primary-button {
+  min-width: 170px;
+}
+
+.debt-summary {
+  min-width: 190px;
+  padding: 10px 12px;
+  border: 1px solid #f1d59b;
   border-radius: 8px;
-  background: #fff;
+  background: #fff8e7;
 }
 
-.tracker-card.safe {
-  border-left-color: var(--safe);
-}
-
-.tracker-card.warning {
-  border-left-color: var(--warning);
-}
-
-.tracker-card.danger {
-  border-left-color: var(--danger);
-}
-
-.tracker-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.tracker-stat {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.tracker-stat span {
-  color: var(--ink);
-  font-size: 1.7rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.tracker-card p {
-  margin-bottom: 0;
-  color: var(--ink);
-  font-size: 0.86rem;
+.debt-summary span,
+.debt-summary small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
   font-weight: 800;
 }
 
-.tracker-card small,
-.tracker-stat small {
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.expense-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 11px 12px;
-}
-
-.expense-item strong {
+.debt-summary strong {
   display: block;
+  margin: 4px 0 2px;
+  color: var(--ink);
+  font-size: 1.2rem;
 }
 
-.expense-amount {
+.debt-item {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 190px;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border-left: 5px solid var(--warning);
+}
+
+.debt-item.paid {
+  border-left-color: var(--safe);
+  background: #f7fcf9;
+}
+
+.debt-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.debt-check input {
+  width: 17px;
+  min-height: 17px;
+  accent-color: var(--safe);
+}
+
+.debt-main strong,
+.debt-amount strong {
+  display: block;
   color: var(--ink);
-  font-weight: 900;
+}
+
+.debt-main p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.debt-amount {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+}
+
+.debt-row-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .empty-state {
@@ -1004,12 +1034,12 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .shopping-form,
+  .debt-form,
   .booking-form {
     grid-template-columns: 1fr 1fr;
   }
 
-  .shopping-form .primary-button,
+  .debt-form-actions,
   .booking-form-actions {
     grid-column: 1 / -1;
   }
@@ -1020,15 +1050,15 @@ textarea:focus {
     padding: 12px;
   }
 
-  .summary-grid,
-  .room-group-grid,
-  .detail-grid,
-  .shopping-form,
-  .booking-form,
-  .tracker-grid,
-  .booking-summary,
-  .booking-controls,
-  .booking-item {
+    .summary-grid,
+    .room-group-grid,
+    .detail-grid,
+    .debt-form,
+    .booking-form,
+    .booking-summary,
+    .booking-controls,
+    .booking-item,
+    .debt-item {
     grid-template-columns: 1fr;
   }
 
@@ -1040,11 +1070,10 @@ textarea:focus {
     padding: 14px;
   }
 
-  .expense-item,
   .booking-item,
+  .debt-item,
   .reminder-title,
   .room-group-header,
-  .tracker-card-top,
   .booking-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -1055,7 +1084,27 @@ textarea:focus {
   }
 
   .booking-row-actions,
-  .booking-form-actions {
+  .booking-form-actions,
+  .debt-form-actions {
     justify-content: flex-start;
+  }
+
+  .tab-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tab-button {
+    padding: 0 8px;
+    font-size: 0.76rem;
+  }
+
+  .tab-button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .debt-amount {
+    justify-items: start;
+    text-align: left;
   }
 }

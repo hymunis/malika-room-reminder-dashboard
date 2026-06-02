@@ -2,7 +2,7 @@ const SPREADSHEET_ID = "1uSzllkqfdrj_aS8jQ9Yq9tT7oLJTfO6WmjCuV0IGMJ0";
 const STATE_SHEET_NAME = "State";
 const ROOMS_SHEET_NAME = "Rooms";
 const BOOKINGS_SHEET_NAME = "Bookings";
-const EXPENSES_SHEET_NAME = "Expenses";
+const DEBTS_SHEET_NAME = "Debts";
 
 function doGet(e) {
   const action = (e.parameter.action || "load").toLowerCase();
@@ -62,7 +62,7 @@ function saveState_(state) {
 function syncReadableTabs_(state) {
   const roomsRows = [["Bulan", "Kamar", "Tipe", "Skema Sewa", "Nama Penghuni", "Tanggal Bayar", "Check-in", "Check-out", "Pembayaran", "Status Kamar", "Status AC", "Jumlah Catatan"]];
   const bookingRows = [["Bulan", "Kamar", "Nama Calon Penghuni", "Status Pembayaran", "DP", "DP Paid", "Payment 1", "Payment 1 Paid", "Payment 2", "Payment 2 Paid", "Total Tagihan", "Total Terbayar", "Rencana Check-in", "Catatan Booking", "ID"]];
-  const expenseRows = [["Bulan", "Tanggal", "Kategori", "Item", "Nominal", "ID"]];
+  const debtRows = [["Bulan", "Tanggal", "Kategori", "Keterangan", "Nominal", "Sudah Lunas", "Tanggal Pelunasan", "Catatan", "ID"]];
 
   Object.keys(state.monthlyData || {}).sort().forEach((monthKey) => {
     const monthData = state.monthlyData[monthKey] || {};
@@ -111,21 +111,24 @@ function syncReadableTabs_(state) {
       ]);
     });
 
-    (monthData.expenses || []).forEach((expense) => {
-      expenseRows.push([
+    (monthData.debts || []).forEach((debt) => {
+      debtRows.push([
         monthKey,
-        expense.date || "",
-        expense.category || "",
-        expense.item || "",
-        Number(expense.amount || 0),
-        expense.id || ""
+        debt.date || "",
+        debt.category || "",
+        debt.description || "",
+        Number(debt.amount || 0),
+        debt.isPaid ? "TRUE" : "FALSE",
+        debt.paidAt || "",
+        debt.note || "",
+        debt.id || ""
       ]);
     });
   });
 
   writeRows_(ROOMS_SHEET_NAME, roomsRows);
   writeRows_(BOOKINGS_SHEET_NAME, bookingRows);
-  writeRows_(EXPENSES_SHEET_NAME, expenseRows);
+  writeRows_(DEBTS_SHEET_NAME, debtRows);
 }
 
 function getPaymentDueDate_(room) {

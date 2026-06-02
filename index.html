@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malika Room Reminder Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260528-carry-fix">
+  <link rel="stylesheet" href="style.css?v=20260602-tabs-debts">
 </head>
 <body>
   <div class="app-shell">
@@ -28,162 +28,168 @@
     </header>
 
     <main>
-      <section class="summary-grid" id="summaryGrid" aria-label="Ringkasan operasional"></section>
+      <nav class="tab-nav" aria-label="Menu dashboard">
+        <button class="tab-button active" type="button" data-tab-target="rooms">Informasi Kamar</button>
+        <button class="tab-button" type="button" data-tab-target="bookings">Early Booking & DP</button>
+        <button class="tab-button" type="button" data-tab-target="debts">Pencatatan Hutang</button>
+      </nav>
 
-      <section class="workspace-grid">
-        <div class="main-column">
-          <section class="section-block">
-            <div class="section-heading">
-              <div>
-                <h2>Room Board</h2>
-                <p>17 kamar aktif dengan status operasional harian.</p>
-              </div>
-              <div class="legend" aria-label="Legenda status kartu">
-                <span><i class="dot safe"></i>Aman</span>
-                <span><i class="dot warning"></i>Perhatian</span>
-                <span><i class="dot danger"></i>Telat</span>
-                <span><i class="dot project"></i>Proyek</span>
-                <span><i class="dot empty"></i>Kosong</span>
-              </div>
-            </div>
-            <div class="room-board" id="roomBoard"></div>
-          </section>
+      <section class="tab-panel active" data-tab-panel="rooms">
+        <section class="summary-grid" id="summaryGrid" aria-label="Ringkasan operasional"></section>
 
-          <section class="section-block booking-section">
-            <div class="section-heading">
-              <div>
-                <h2>Early Booking Notes</h2>
-                <p>Catat calon penghuni yang booking atau sudah DP sebelum kamar tersedia.</p>
+        <section class="workspace-grid">
+          <div class="main-column">
+            <section class="section-block">
+              <div class="section-heading">
+                <div>
+                  <h2>Room Board</h2>
+                  <p>17 kamar aktif dengan status operasional harian.</p>
+                </div>
+                <div class="legend" aria-label="Legenda status kartu">
+                  <span><i class="dot safe"></i>Aman</span>
+                  <span><i class="dot warning"></i>Perhatian</span>
+                  <span><i class="dot danger"></i>Telat</span>
+                  <span><i class="dot project"></i>Proyek</span>
+                  <span><i class="dot empty"></i>Kosong</span>
+                </div>
               </div>
-            </div>
-            <form class="booking-form" id="bookingForm">
-              <label>
-                Nomor kamar
-                <select id="bookingRoomId" required></select>
-              </label>
-              <label>
-                Nama calon penghuni selanjutnya
-                <input id="bookingProspectName" placeholder="Nama calon penghuni" required>
-              </label>
-              <label>
-                Status pembayaran
-                <select id="bookingPaymentStatus" required>
-                  <option value="Lunas">Lunas</option>
-                  <option value="Cicil">Cicil</option>
-                </select>
-              </label>
-              <label>
-                DP
-                <input id="bookingDpAmount" type="number" min="0" step="1000" placeholder="0">
-              </label>
-              <label class="checkbox-field">
-                <input id="bookingDpPaid" type="checkbox">
-                DP sudah dibayar
-              </label>
-              <label>
-                Payment 1
-                <input id="bookingPayment1Amount" type="number" min="0" step="1000" placeholder="0">
-              </label>
-              <label class="checkbox-field">
-                <input id="bookingPayment1Paid" type="checkbox">
-                Payment 1 sudah dibayar
-              </label>
-              <label>
-                Payment 2
-                <input id="bookingPayment2Amount" type="number" min="0" step="1000" placeholder="0">
-              </label>
-              <label class="checkbox-field">
-                <input id="bookingPayment2Paid" type="checkbox">
-                Payment 2 sudah dibayar
-              </label>
-              <label>
-                Rencana check-in
-                <input id="bookingPlannedCheckIn" type="date" required>
-              </label>
-              <label class="wide-field">
-                Catatan booking
-                <textarea id="bookingNote" placeholder="Contoh: masuk setelah kamar kosong, sudah DP, follow-up pelunasan."></textarea>
-              </label>
-              <div class="booking-form-actions">
-                <button class="primary-button" id="bookingSubmitBtn" type="submit">Tambah Booking</button>
-                <button class="small-button" id="bookingCancelEditBtn" type="button" hidden>Batal Edit</button>
-              </div>
-            </form>
-            <div class="booking-list" id="bookingList"></div>
-          </section>
+              <div class="room-board" id="roomBoard"></div>
+            </section>
+          </div>
 
-          <section class="section-block shopping-section">
-            <div class="section-heading">
-              <div>
-                <h2>Belanja Bulanan</h2>
-                <p>Catat kebutuhan rutin kost dan biaya bulan berjalan.</p>
+          <aside class="side-column">
+            <section class="detail-panel section-block" id="detailPanel">
+              <div class="empty-detail">
+                <span class="empty-icon">⌂</span>
+                <h2>Pilih kamar</h2>
+                <p>Klik salah satu kartu kamar untuk melihat detail, mengubah status, dan menambahkan catatan.</p>
               </div>
-            </div>
-            <form class="shopping-form" id="shoppingForm">
-              <label>
-                Kategori
-                <select id="expenseCategory" required>
-                  <option value="Operasional">Operasional</option>
-                  <option value="Kebersihan">Kebersihan</option>
-                  <option value="Utilitas">Utilitas</option>
-                  <option value="Karyawan">Karyawan</option>
-                  <option value="Perbaikan">Perbaikan</option>
-                  <option value="Lainnya">Lainnya</option>
-                </select>
-              </label>
-              <label>
-                Item
-                <input id="expenseItem" list="routineItems" placeholder="Pilih atau ketik item" required>
-                <datalist id="routineItems">
-                  <option value="Listrik"></option>
-                  <option value="Sampah"></option>
-                  <option value="Gas"></option>
-                  <option value="Gaji karyawan"></option>
-                  <option value="Air galon"></option>
-                  <option value="Kresek sampah"></option>
-                  <option value="Pembersih toilet"></option>
-                  <option value="Sabun cuci tangan"></option>
-                  <option value="Cairan pel"></option>
-                </datalist>
-              </label>
-              <label>
-                Nominal
-                <input id="expenseAmount" type="number" min="0" step="1000" placeholder="0" required>
-              </label>
-              <label>
-                Tanggal
-                <input id="expenseDate" type="date" required>
-              </label>
-              <button class="primary-button" type="submit">Tambah</button>
-            </form>
-            <div class="expense-tracker" id="expenseTracker"></div>
-            <div class="expense-list" id="expenseList"></div>
-          </section>
-        </div>
+            </section>
 
-        <aside class="side-column">
-          <section class="detail-panel section-block" id="detailPanel">
-            <div class="empty-detail">
-              <span class="empty-icon">⌂</span>
-              <h2>Pilih kamar</h2>
-              <p>Klik salah satu kartu kamar untuk melihat detail, mengubah status, dan menambahkan catatan.</p>
-            </div>
-          </section>
-
-          <section class="section-block">
-            <div class="section-heading compact">
-              <div>
-                <h2>Reminder Prioritas</h2>
-                <p>Auto-generate dari status kamar dan belanja.</p>
+            <section class="section-block">
+              <div class="section-heading compact">
+                <div>
+                  <h2>Reminder Prioritas</h2>
+                  <p>Auto-generate dari status kamar, booking, dan hutang.</p>
+                </div>
               </div>
+              <div class="reminder-list" id="reminderList"></div>
+            </section>
+          </aside>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="bookings">
+        <section class="section-block booking-section">
+          <div class="section-heading">
+            <div>
+              <h2>Early Booking Notes</h2>
+              <p>Catat calon penghuni yang booking atau sudah DP sebelum kamar tersedia.</p>
             </div>
-            <div class="reminder-list" id="reminderList"></div>
-          </section>
-        </aside>
+          </div>
+          <form class="booking-form" id="bookingForm">
+            <label>
+              Nomor kamar
+              <select id="bookingRoomId" required></select>
+            </label>
+            <label>
+              Nama calon penghuni selanjutnya
+              <input id="bookingProspectName" placeholder="Nama calon penghuni" required>
+            </label>
+            <label>
+              Status pembayaran
+              <select id="bookingPaymentStatus" required>
+                <option value="Lunas">Lunas</option>
+                <option value="Cicil">Cicil</option>
+              </select>
+            </label>
+            <label>
+              DP
+              <input id="bookingDpAmount" type="number" min="0" step="1000" placeholder="0">
+            </label>
+            <label class="checkbox-field">
+              <input id="bookingDpPaid" type="checkbox">
+              DP sudah dibayar
+            </label>
+            <label>
+              Payment 1
+              <input id="bookingPayment1Amount" type="number" min="0" step="1000" placeholder="0">
+            </label>
+            <label class="checkbox-field">
+              <input id="bookingPayment1Paid" type="checkbox">
+              Payment 1 sudah dibayar
+            </label>
+            <label>
+              Payment 2
+              <input id="bookingPayment2Amount" type="number" min="0" step="1000" placeholder="0">
+            </label>
+            <label class="checkbox-field">
+              <input id="bookingPayment2Paid" type="checkbox">
+              Payment 2 sudah dibayar
+            </label>
+            <label>
+              Rencana check-in
+              <input id="bookingPlannedCheckIn" type="date" required>
+            </label>
+            <label class="wide-field">
+              Catatan booking
+              <textarea id="bookingNote" placeholder="Contoh: masuk setelah kamar kosong, sudah DP, follow-up pelunasan."></textarea>
+            </label>
+            <div class="booking-form-actions">
+              <button class="primary-button" id="bookingSubmitBtn" type="submit">Tambah Booking</button>
+              <button class="small-button" id="bookingCancelEditBtn" type="button" hidden>Batal Edit</button>
+            </div>
+          </form>
+          <div class="booking-list" id="bookingList"></div>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="debts">
+        <section class="section-block debt-section">
+          <div class="section-heading">
+            <div>
+              <h2>Pencatatan Hutang Penjaga Kost</h2>
+              <p>Catat biaya yang dibayarkan lebih dulu oleh penjaga kost dan pantau pelunasannya.</p>
+            </div>
+            <div class="debt-summary" id="debtSummary"></div>
+          </div>
+          <form class="debt-form" id="debtForm">
+            <label>
+              Kategori hutang
+              <select id="debtCategory" required>
+                <option value="Biaya Internet">Biaya Internet</option>
+                <option value="Pembelian Barang">Pembelian Barang</option>
+                <option value="Pembayaran Jasa">Pembayaran Jasa</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </label>
+            <label>
+              Keterangan
+              <input id="debtDescription" placeholder="Contoh: internet Juni atau jasa teknisi" required>
+            </label>
+            <label>
+              Nominal
+              <input id="debtAmount" type="number" min="0" step="1000" placeholder="0" required>
+            </label>
+            <label>
+              Tanggal
+              <input id="debtDate" type="date" required>
+            </label>
+            <label class="wide-field">
+              Catatan
+              <textarea id="debtNote" placeholder="Catatan tambahan bila diperlukan."></textarea>
+            </label>
+            <div class="debt-form-actions">
+              <button class="primary-button" id="debtSubmitBtn" type="submit">Tambah Hutang</button>
+              <button class="small-button" id="debtCancelEditBtn" type="button" hidden>Batal Edit</button>
+            </div>
+          </form>
+          <div class="debt-list" id="debtList"></div>
+        </section>
       </section>
     </main>
   </div>
 
-  <script src="app.js?v=20260528-carry-fix"></script>
+  <script src="app.js?v=20260602-tabs-debts"></script>
 </body>
 </html>

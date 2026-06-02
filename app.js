@@ -14,29 +14,12 @@ const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenan
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
 const flexibleRentTypes = ["Standard", "Standard+"];
 const rentSchemeOptions = ["Bulanan", "Semesteran"];
-const bookingPaymentOptions = ["Lunas", "Cicil"];
+const debtCategoryOptions = ["Biaya Internet", "Pembelian Barang", "Pembayaran Jasa", "Lainnya"];
 const roomTypeGroups = [
   { type: "Standard", description: "Bulanan atau semesteran", tone: "standard" },
   { type: "Standard+", description: "Semesteran", tone: "standard-plus" },
   { type: "Eksklusif", description: "Tahunan, ber-AC", tone: "exclusive" },
   { type: "Deluxe", description: "Tahunan, ber-AC", tone: "deluxe" }
-];
-const routineItems = ["Listrik", "Sampah", "Gas", "Gaji karyawan", "Air galon", "Kresek sampah", "Pembersih toilet", "Sabun cuci tangan", "Cairan pel"];
-const expenseTrackingRules = [
-  {
-    item: "Gas",
-    aliases: ["gas"],
-    expectedDays: 45,
-    normalText: "Normal: habis sekitar 1,5 bulan sekali",
-    maxMonthlyPurchases: 1
-  },
-  {
-    item: "Air galon",
-    aliases: ["air galon", "air minum galon", "galon"],
-    expectedDays: 21,
-    normalText: "Normal: habis sekitar 3 minggu sekali",
-    maxMonthlyPurchases: 2
-  }
 ];
 
 const baseRooms = [
@@ -65,8 +48,11 @@ let remoteReady = !GOOGLE_SHEET_API_URL;
 let isApplyingRemoteState = false;
 let syncTimer;
 let editingBookingId = null;
+let editingDebtId = null;
 
 const summaryGrid = document.querySelector("#summaryGrid");
+const tabButtons = document.querySelectorAll("[data-tab-target]");
+const tabPanels = document.querySelectorAll("[data-tab-panel]");
 const roomBoard = document.querySelector("#roomBoard");
 const detailPanel = document.querySelector("#detailPanel");
 const reminderList = document.querySelector("#reminderList");
@@ -76,11 +62,13 @@ const bookingPlannedCheckIn = document.querySelector("#bookingPlannedCheckIn");
 const bookingSubmitBtn = document.querySelector("#bookingSubmitBtn");
 const bookingCancelEditBtn = document.querySelector("#bookingCancelEditBtn");
 const bookingList = document.querySelector("#bookingList");
-const shoppingForm = document.querySelector("#shoppingForm");
-const expenseTracker = document.querySelector("#expenseTracker");
-const expenseList = document.querySelector("#expenseList");
+const debtForm = document.querySelector("#debtForm");
+const debtDate = document.querySelector("#debtDate");
+const debtSubmitBtn = document.querySelector("#debtSubmitBtn");
+const debtCancelEditBtn = document.querySelector("#debtCancelEditBtn");
+const debtSummary = document.querySelector("#debtSummary");
+const debtList = document.querySelector("#debtList");
 const resetDataBtn = document.querySelector("#resetDataBtn");
-const expenseDate = document.querySelector("#expenseDate");
 const yearSelect = document.querySelector("#yearSelect");
 const monthSelect = document.querySelector("#monthSelect");
 const syncStatus = document.querySelector("#syncStatus");
@@ -90,7 +78,7 @@ renderYearOptions(initialYear);
 yearSelect.value = String(initialYear);
 renderMonthOptions(initialYear);
 monthSelect.value = state.selectedMonth || defaultMonthKey;
-updateExpenseDateForMonth();
+updatePeriodFormDates();
 bookingRoomId.innerHTML = baseRooms.map((room) => `<option value="${room.id}">${room.id}</option>`).join("");
 bookingPlannedCheckIn.value = defaultExpenseDate();
 
@@ -164,6 +152,7 @@ function createMonthData(monthKey, withSeedExpenses = false) {
     rooms: baseRooms.map((room) => ({ ...room, notes: [] })),
     bookings: [],
     expenses: withSeedExpenses ? seedExpenses(monthKey) : [],
+    debts: [],
     carriedContextFrom: ""
   };
 }
@@ -194,6 +183,7 @@ function normalizeMonthData(monthData, monthKey) {
     }),
     bookings: Array.isArray(monthData.bookings) ? monthData.bookings.map(normalizeBooking) : migrateRoomBookings(monthData.rooms || []),
     expenses: Array.isArray(monthData.expenses) ? monthData.expenses : seedExpenses(monthKey),
+    debts: Array.isArray(monthData.debts) ? monthData.debts.map(normalizeDebt) : [],
     carriedContextFrom: monthData.carriedContextFrom || ""
   };
 }
@@ -212,6 +202,19 @@ function normalizeBooking(booking) {
     payment2Paid: typeof booking.payment2Paid === "boolean" ? booking.payment2Paid : Number(booking.payment1Amount !== undefined ? booking.payment2Amount || 0 : booking.payment3Amount || 0) > 0,
     plannedCheckIn: booking.plannedCheckIn || booking.bookingMoveInDate || "",
     note: booking.note || booking.bookingNote || ""
+  };
+}
+
+function normalizeDebt(debt) {
+  return {
+    id: debt.id || crypto.randomUUID(),
+    category: debtCategoryOptions.includes(debt.category) ? debt.category : "Lainnya",
+    description: debt.description || "",
+    amount: Number(debt.amount || 0),
+    date: debt.date || "",
+    note: debt.note || "",
+    isPaid: Boolean(debt.isPaid),
+    paidAt: debt.paidAt || ""
   };
 }
 
@@ -252,10 +255,6 @@ function getYearFromMonthKey(monthKey) {
   return Number(String(monthKey || defaultMonthKey).slice(0, 4)) || currentYear;
 }
 
-function monthKeys(year = getSelectedYear()) {
-  return monthNames.map((_, index) => `${year}-${String(index + 1).padStart(2, "0")}`);
-}
-
 function getSelectedYear() {
   return Number(yearSelect.value || state.selectedYear || getYearFromMonthKey(state.selectedMonth) || currentYear);
 }
@@ -282,6 +281,7 @@ function createCarriedMonthData(monthKey) {
     }),
     bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
     expenses: [],
+    debts: [],
     carriedContextFrom: previousKey
   };
 }
@@ -390,17 +390,8 @@ function defaultExpenseDate() {
   return `${monthKey}-01`;
 }
 
-function selectedMonthEndDate() {
-  const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
-  const [year, month] = monthKey.split("-").map(Number);
-  return localDateString(new Date(year, month, 0));
-}
-
-function updateExpenseDateForMonth() {
-  const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
-  expenseDate.min = `${monthKey}-01`;
-  expenseDate.max = selectedMonthEndDate();
-  expenseDate.value = defaultExpenseDate();
+function updatePeriodFormDates() {
+  debtDate.value = defaultExpenseDate();
 }
 
 function localDateString(date) {
@@ -436,7 +427,7 @@ async function loadRemoteState() {
       yearSelect.value = String(state.selectedYear || getYearFromMonthKey(state.selectedMonth || defaultMonthKey));
       renderMonthOptions(getSelectedYear());
       monthSelect.value = state.selectedMonth || defaultMonthKey;
-      updateExpenseDateForMonth();
+      updatePeriodFormDates();
       bookingPlannedCheckIn.value = defaultExpenseDate();
       render();
       isApplyingRemoteState = false;
@@ -510,15 +501,17 @@ function isFlexibleRentRoom(room) {
   return flexibleRentTypes.includes(room.type);
 }
 
-function currentMonthExpenses() {
-  return activeMonthData().expenses;
+function visibleDebts() {
+  const selectedMonth = monthSelect.value || state.selectedMonth || defaultMonthKey;
+  return Object.keys(state.monthlyData || {})
+    .filter((monthKey) => monthKey <= selectedMonth)
+    .flatMap((monthKey) => {
+      return (state.monthlyData[monthKey].debts || []).map((debt) => ({ ...debt, monthKey }));
+    });
 }
 
-function allTrackedYearExpenses() {
-  return monthKeys().flatMap((monthKey) => {
-    const monthData = state.monthlyData[monthKey];
-    return monthData ? monthData.expenses : [];
-  });
+function currentOutstandingDebts() {
+  return visibleDebts().filter((debt) => !debt.isPaid);
 }
 
 function getRoomTone(room) {
@@ -551,8 +544,7 @@ function render() {
   renderDetail();
   renderReminders();
   renderBookings();
-  renderExpenseTracker();
-  renderExpenses();
+  renderDebts();
   saveState();
 }
 
@@ -562,7 +554,8 @@ function renderSummary() {
   const installments = rooms.filter((room) => room.paymentStatus === "Cicil").length;
   const acService = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus)).length;
   const projects = rooms.filter((room) => ["Renovasi", "Upgrade", "Maintenance Ringan"].includes(room.roomStatus)).length;
-  const expensesTotal = currentMonthExpenses().reduce((total, expense) => total + Number(expense.amount), 0);
+  const unpaidDebts = currentOutstandingDebts();
+  const unpaidDebtTotal = unpaidDebts.reduce((total, debt) => total + Number(debt.amount), 0);
 
   const cards = [
     { label: "Total kamar", value: rooms.length, hint: `Periode ${selectedMonthName()}` },
@@ -570,7 +563,7 @@ function renderSummary() {
     { label: "Cicilan aktif", value: installments, hint: "Perlu pantau jadwal cicil" },
     { label: "AC perlu service", value: acService, hint: "Hanya kamar Deluxe & Eksklusif" },
     { label: "Kamar renovasi/upgrade", value: projects, hint: "Termasuk maintenance ringan" },
-      { label: "Belanja periode ini", value: formatCurrency(expensesTotal), hint: `${currentMonthExpenses().length} transaksi ${selectedMonthName()}` }
+    { label: "Hutang belum lunas", value: formatCurrency(unpaidDebtTotal), hint: `${unpaidDebts.length} transaksi perlu ditutup` }
   ];
 
   summaryGrid.innerHTML = cards.map((card) => `
@@ -903,27 +896,13 @@ function buildReminders() {
     }
   });
 
-  const boughtItems = currentMonthExpenses().map((expense) => expense.item.toLowerCase());
-  const missingRoutine = routineItems.filter((item) => !boughtItems.includes(item.toLowerCase()));
-
-  if (missingRoutine.length) {
+  currentOutstandingDebts().forEach((debt) => {
     reminders.push({
-      category: "Belanja",
-      priority: "Rendah",
-      title: "Cek stok item rutin",
-      description: `Belum tercatat bulan ini: ${missingRoutine.slice(0, 4).join(", ")}${missingRoutine.length > 4 ? ", ..." : ""}.`
+      category: "Hutang",
+      priority: "Sedang",
+      title: `${debt.category} belum dilunasi`,
+      description: `${debt.description}: ${formatCurrency(debt.amount)} sejak ${formatDate(debt.date)}.`
     });
-  }
-
-  getExpenseTracking().forEach((tracking) => {
-    if (tracking.tone === "danger") {
-      reminders.push({
-        category: "Belanja",
-        priority: "Sedang",
-        title: `${tracking.item} terlalu sering dibeli`,
-        description: `${tracking.currentMonthCount} pembelian bulan ini. ${tracking.normalText}.`
-      });
-    }
   });
 
   const rank = { Tinggi: 1, Sedang: 2, Rendah: 3 };
@@ -979,89 +958,38 @@ function renderBookings() {
   }).join("") : `<div class="empty-state">Belum ada early booking untuk periode ini.</div>`;
 }
 
-function renderExpenses() {
-  const expenses = [...activeMonthData().expenses].sort((a, b) => b.date.localeCompare(a.date));
+function renderDebts() {
+  const debts = [...visibleDebts()].sort((a, b) => b.date.localeCompare(a.date));
+  const outstanding = debts.filter((debt) => !debt.isPaid);
+  const outstandingTotal = outstanding.reduce((total, debt) => total + debt.amount, 0);
 
-  expenseList.innerHTML = expenses.length ? expenses.map((expense) => `
-    <article class="expense-item">
-      <div>
-        <strong>${escapeHtml(expense.item)}</strong>
-        <small>${expense.category} · ${formatDate(expense.date)}</small>
-      </div>
-      <div class="expense-amount">${formatCurrency(Number(expense.amount))}</div>
-    </article>
-  `).join("") : `<div class="empty-state">Belum ada belanja tercatat.</div>`;
-}
-
-function renderExpenseTracker() {
-  const tracking = getExpenseTracking();
-
-  expenseTracker.innerHTML = `
-    <div class="tracker-heading">
-      <div>
-        <h3>Tracking Pembelian Rutin</h3>
-        <p>Pakai ini untuk kontrol item yang kalau makin sering dibeli berarti makin boros.</p>
-      </div>
-    </div>
-    <div class="tracker-grid">
-      ${tracking.map((item) => `
-        <article class="tracker-card ${item.tone}">
-          <div class="tracker-card-top">
-            <strong>${item.item}</strong>
-            <span class="priority">${item.status}</span>
-          </div>
-          <div class="tracker-stat">
-            <span>${item.currentMonthCount}</span>
-            <small>pembelian bulan ini</small>
-          </div>
-          <p>${item.normalText}</p>
-          <small>${item.lastPurchaseText} · ${item.averageText}</small>
-        </article>
-      `).join("")}
-    </div>
+  debtSummary.innerHTML = `
+    <span>Belum lunas</span>
+    <strong>${formatCurrency(outstandingTotal)}</strong>
+    <small>${outstanding.length} dari ${debts.length} transaksi</small>
   `;
-}
 
-function getExpenseTracking() {
-  return expenseTrackingRules.map((rule) => {
-    const purchases = allTrackedYearExpenses()
-      .filter((expense) => matchesExpenseRule(expense.item, rule))
-      .sort((a, b) => a.date.localeCompare(b.date));
-    const monthPurchases = currentMonthExpenses().filter((expense) => matchesExpenseRule(expense.item, rule));
-    const intervals = purchases.slice(1).map((purchase, index) => {
-      return daysBetween(purchases[index].date, purchase.date);
-    });
-    const averageInterval = intervals.length
-      ? Math.round(intervals.reduce((total, days) => total + days, 0) / intervals.length)
-      : null;
-    const lastPurchase = purchases[purchases.length - 1];
-    const daysSinceLast = lastPurchase ? daysBetween(lastPurchase.date, selectedMonthEndDate()) : null;
-    const tooFrequent = monthPurchases.length > rule.maxMonthlyPurchases || (averageInterval !== null && averageInterval < rule.expectedDays * 0.8);
-    const overdue = daysSinceLast !== null && daysSinceLast > rule.expectedDays;
-    const tone = tooFrequent ? "danger" : overdue ? "warning" : "safe";
-    const status = tooFrequent ? "Boros" : overdue ? "Cek Stok" : "Normal";
-
-    return {
-      item: rule.item,
-      normalText: rule.normalText,
-      currentMonthCount: monthPurchases.length,
-      averageText: averageInterval ? `Rata-rata ${averageInterval} hari sekali` : "Rata-rata belum cukup data",
-      lastPurchaseText: lastPurchase ? `Terakhir ${daysSinceLast} hari lalu` : "Belum ada pembelian tercatat",
-      status,
-      tone
-    };
-  });
-}
-
-function matchesExpenseRule(item, rule) {
-  const normalizedItem = item.toLowerCase().trim();
-  return rule.aliases.some((alias) => normalizedItem.includes(alias));
-}
-
-function daysBetween(startDate, endDate) {
-  const start = new Date(`${startDate}T00:00:00`);
-  const end = new Date(`${endDate}T00:00:00`);
-  return Math.max(0, Math.round((end - start) / 86400000));
+  debtList.innerHTML = debts.length ? debts.map((debt) => `
+    <article class="debt-item ${debt.isPaid ? "paid" : ""}">
+      <label class="debt-check">
+        <input type="checkbox" data-toggle-debt="${debt.id}" ${debt.isPaid ? "checked" : ""}>
+        <span>${debt.isPaid ? "Sudah lunas" : "Belum lunas"}</span>
+      </label>
+      <div class="debt-main">
+        <strong>${escapeHtml(debt.description)}</strong>
+        <small>${debt.category} · ${formatDate(debt.date)}</small>
+        ${debt.note ? `<p>${escapeHtml(debt.note)}</p>` : ""}
+      </div>
+      <div class="debt-amount">
+        <strong>${formatCurrency(debt.amount)}</strong>
+        ${debt.paidAt ? `<small>Dilunasi ${formatDate(debt.paidAt)}</small>` : ""}
+        <div class="debt-row-actions">
+          <button class="small-button" type="button" data-edit-debt="${debt.id}">Edit</button>
+          <button class="small-button" type="button" data-delete-debt="${debt.id}">Hapus</button>
+        </div>
+      </div>
+    </article>
+  `).join("") : `<div class="empty-state">Belum ada hutang tercatat sampai periode ini.</div>`;
 }
 
 function formatDate(dateValue) {
@@ -1127,6 +1055,48 @@ function resetBookingForm() {
   bookingCancelEditBtn.hidden = true;
 }
 
+function fillDebtForm(debt) {
+  editingDebtId = debt.id;
+  document.querySelector("#debtCategory").value = debt.category;
+  document.querySelector("#debtDescription").value = debt.description;
+  document.querySelector("#debtAmount").value = debt.amount || "";
+  document.querySelector("#debtDate").value = debt.date || defaultExpenseDate();
+  document.querySelector("#debtNote").value = debt.note || "";
+  debtSubmitBtn.textContent = "Simpan Hutang";
+  debtCancelEditBtn.hidden = false;
+  debtForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function resetDebtForm() {
+  editingDebtId = null;
+  debtForm.reset();
+  debtDate.value = defaultExpenseDate();
+  debtSubmitBtn.textContent = "Tambah Hutang";
+  debtCancelEditBtn.hidden = true;
+}
+
+function findDebtById(debtId) {
+  for (const monthData of Object.values(state.monthlyData || {})) {
+    const debt = (monthData.debts || []).find((item) => item.id === debtId);
+    if (debt) return debt;
+  }
+  return null;
+}
+
+function updateDebtById(debtId, updater) {
+  Object.values(state.monthlyData || {}).forEach((monthData) => {
+    monthData.debts = (monthData.debts || []).map((debt) => {
+      return debt.id === debtId ? updater(debt) : debt;
+    });
+  });
+}
+
+function deleteDebtById(debtId) {
+  Object.values(state.monthlyData || {}).forEach((monthData) => {
+    monthData.debts = (monthData.debts || []).filter((debt) => debt.id !== debtId);
+  });
+}
+
 function updateSelectedRoom(updater) {
   const monthData = activeMonthData();
   monthData.rooms = monthData.rooms.map((room) => {
@@ -1144,6 +1114,13 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    tabButtons.forEach((item) => item.classList.toggle("active", item === button));
+    tabPanels.forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === button.dataset.tabTarget));
+  });
+});
 
 roomBoard.addEventListener("click", (event) => {
   const card = event.target.closest("[data-room-id]");
@@ -1249,31 +1226,72 @@ bookingCancelEditBtn.addEventListener("click", () => {
   resetBookingForm();
 });
 
-shoppingForm.addEventListener("submit", (event) => {
+debtForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const formData = {
-    id: crypto.randomUUID(),
-    category: document.querySelector("#expenseCategory").value,
-    item: document.querySelector("#expenseItem").value.trim(),
-    amount: Number(document.querySelector("#expenseAmount").value),
-    date: document.querySelector("#expenseDate").value
+  const existingDebt = editingDebtId ? findDebtById(editingDebtId) : null;
+  const debt = {
+    id: editingDebtId || crypto.randomUUID(),
+    category: document.querySelector("#debtCategory").value,
+    description: document.querySelector("#debtDescription").value.trim(),
+    amount: Number(document.querySelector("#debtAmount").value),
+    date: document.querySelector("#debtDate").value,
+    note: document.querySelector("#debtNote").value.trim(),
+    isPaid: existingDebt?.isPaid || false,
+    paidAt: existingDebt?.paidAt || ""
   };
 
-  if (!formData.item || !formData.amount || !formData.date) return;
+  if (!debt.description || !debt.amount || !debt.date) return;
 
-  activeMonthData().expenses = [formData, ...activeMonthData().expenses];
-  shoppingForm.reset();
-  updateExpenseDateForMonth();
+  if (editingDebtId) {
+    updateDebtById(editingDebtId, () => debt);
+  } else {
+    activeMonthData().debts = [debt, ...activeMonthData().debts];
+  }
+
+  resetDebtForm();
   render();
+});
+
+debtList.addEventListener("change", (event) => {
+  const checkbox = event.target.closest("[data-toggle-debt]");
+  if (!checkbox) return;
+
+  updateDebtById(checkbox.dataset.toggleDebt, (debt) => ({
+    ...debt,
+    isPaid: checkbox.checked,
+    paidAt: checkbox.checked ? localDateString(new Date()) : ""
+  }));
+  render();
+});
+
+debtList.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-edit-debt]");
+  if (editButton) {
+    const debt = findDebtById(editButton.dataset.editDebt);
+    if (!debt) return;
+    fillDebtForm(debt);
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-delete-debt]");
+  if (!deleteButton) return;
+
+  deleteDebtById(deleteButton.dataset.deleteDebt);
+  render();
+});
+
+debtCancelEditBtn.addEventListener("click", () => {
+  resetDebtForm();
 });
 
 monthSelect.addEventListener("change", () => {
   state.selectedMonth = monthSelect.value;
   state.selectedYear = getSelectedYear();
   activeMonthData();
-  updateExpenseDateForMonth();
+  updatePeriodFormDates();
   resetBookingForm();
+  resetDebtForm();
   render();
 });
 
@@ -1284,13 +1302,14 @@ yearSelect.addEventListener("change", () => {
   state.selectedYear = Number(yearSelect.value);
   state.selectedMonth = monthSelect.value;
   activeMonthData();
-  updateExpenseDateForMonth();
+  updatePeriodFormDates();
   resetBookingForm();
+  resetDebtForm();
   render();
 });
 
 resetDataBtn.addEventListener("click", () => {
-  const confirmed = window.confirm("Reset semua perubahan status, catatan, dan belanja ke data awal?");
+  const confirmed = window.confirm("Reset semua perubahan status, catatan, booking, dan hutang ke data awal?");
   if (!confirmed) return;
 
   localStorage.removeItem(STORAGE_KEY);
@@ -1300,8 +1319,9 @@ resetDataBtn.addEventListener("click", () => {
   yearSelect.value = String(state.selectedYear || currentYear);
   renderMonthOptions(getSelectedYear());
   monthSelect.value = state.selectedMonth;
-  updateExpenseDateForMonth();
+  updatePeriodFormDates();
   resetBookingForm();
+  resetDebtForm();
   render();
 });
 
