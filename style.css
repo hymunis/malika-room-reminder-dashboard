@@ -149,6 +149,33 @@ h3 {
   color: #a63328;
 }
 
+.access-mode-badge,
+.mode-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #c9dbf5;
+  border-radius: 8px;
+  background: #eef5ff;
+  color: #1f5cae;
+  padding: 0 12px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.access-mode-badge.viewing {
+  border-color: #b9e4c9;
+  background: #effaf3;
+  color: #217446;
+}
+
+.view-mode #viewModeLink,
+.view-mode [data-edit-only] {
+  display: none !important;
+}
+
 .primary-button,
 .ghost-button,
 .small-button {
@@ -1138,6 +1165,38 @@ textarea:focus {
   gap: 10px;
 }
 
+.facility-view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.facility-view-grid div {
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.facility-view-grid span,
+.facility-view-grid strong {
+  display: block;
+}
+
+.facility-view-grid span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.facility-view-grid strong {
+  margin-top: 5px;
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
 .facility-controls textarea {
   min-height: 72px;
 }
@@ -1245,6 +1304,7 @@ textarea:focus {
     .booking-item,
     .debt-item,
     .facility-controls,
+    .facility-view-grid,
     .rate-settings-form {
     grid-template-columns: 1fr;
   }

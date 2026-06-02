@@ -1,6 +1,8 @@
 const STORAGE_KEY = "malika-room-reminder-state-v1";
 // Paste Google Apps Script Web App /exec URL here after deployment.
 const GOOGLE_SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxFY3KuxhQkNqiCjzi4boqJnpeftt-IjHhfStiie5fOtmi2mXc2AZnBfU0hHOaqsbg8dw/exec";
+const isViewMode = new URLSearchParams(window.location.search).get("mode") === "view";
+document.body.classList.toggle("view-mode", isViewMode);
 
 const monthNames = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -92,6 +94,10 @@ const monthSelect = document.querySelector("#monthSelect");
 const syncStatus = document.querySelector("#syncStatus");
 const rateSettingsForm = document.querySelector("#rateSettingsForm");
 const rateSettingsStatus = document.querySelector("#rateSettingsStatus");
+const accessModeBadge = document.querySelector("#accessModeBadge");
+
+accessModeBadge.textContent = isViewMode ? "Mode Viewing · Hanya lihat" : "Mode Editing";
+accessModeBadge.classList.toggle("viewing", isViewMode);
 
 const initialYear = getYearFromMonthKey(state.selectedMonth || defaultMonthKey);
 renderYearOptions(initialYear);
@@ -211,6 +217,8 @@ function normalizeAcServiceTasks(tasks = []) {
 }
 
 function saveState() {
+  if (isViewMode) return;
+
   state.selectedRoomId = selectedRoomId;
   state.selectedMonth = monthSelect.value;
   state.selectedYear = Number(yearSelect.value);
@@ -494,7 +502,7 @@ function setSyncStatus(message, tone = "") {
 
 async function loadRemoteState() {
   if (!GOOGLE_SHEET_API_URL) {
-    setSyncStatus("Local storage");
+    setSyncStatus(isViewMode ? "Viewing · data lokal" : "Local storage");
     return;
   }
 
@@ -517,12 +525,16 @@ async function loadRemoteState() {
       bookingPlannedCheckIn.value = defaultExpenseDate();
       render();
       isApplyingRemoteState = false;
-      setSyncStatus("Google Sheet tersambung", "online");
+      setSyncStatus(isViewMode ? "Viewing · Google Sheet tersambung" : "Google Sheet tersambung", "online");
       return;
     }
 
-    setSyncStatus("Sheet siap, menyimpan...", "saving");
-    scheduleRemoteSave(0);
+    if (isViewMode) {
+      setSyncStatus("Viewing · Sheet belum berisi data", "online");
+    } else {
+      setSyncStatus("Sheet siap, menyimpan...", "saving");
+      scheduleRemoteSave(0);
+    }
   } catch {
     remoteReady = true;
     setSyncStatus("Offline, pakai lokal", "error");
@@ -530,12 +542,14 @@ async function loadRemoteState() {
 }
 
 function scheduleRemoteSave(delay = 700) {
+  if (isViewMode) return;
+
   clearTimeout(syncTimer);
   syncTimer = setTimeout(saveRemoteState, delay);
 }
 
 async function saveRemoteState() {
-  if (!GOOGLE_SHEET_API_URL) return;
+  if (!GOOGLE_SHEET_API_URL || isViewMode) return;
 
   setSyncStatus("Menyimpan...", "saving");
 
@@ -766,7 +780,7 @@ function renderDetail() {
       </div>
     </div>
 
-    <div class="control-grid">
+    ${isViewMode ? "" : `<div class="control-grid">
       <label>
         Nama penghuni
         <input data-action="resident-name" value="${escapeHtml(room.residentName || "")}" placeholder="Contoh: Ibu Sari / Pak Budi">
@@ -808,7 +822,7 @@ function renderDetail() {
       <div class="note-actions">
         <button class="small-button" type="button" id="addNoteBtn">Simpan Catatan</button>
       </div>
-    </div>
+    </div>`}
 
     <div class="notes-list">
       ${(room.notes || []).length ? room.notes.map((note) => `
@@ -888,7 +902,7 @@ function renderFacilityTasks() {
           </div>
           <span class="pill ${status.tone}">${status.label}</span>
         </div>
-        <div class="facility-controls">
+        ${isViewMode ? renderFacilityReadOnly(task, "Terakhir selesai", "Jadwal berikutnya") : `<div class="facility-controls">
           <label>
             Terakhir selesai
             <input type="date" data-facility-field="lastCompletedDate" data-facility-id="${task.id}" value="${task.lastCompletedDate}">
@@ -901,7 +915,7 @@ function renderFacilityTasks() {
             Catatan
             <textarea data-facility-field="note" data-facility-id="${task.id}" placeholder="Tambahkan konteks atau kebutuhan berikutnya.">${escapeHtml(task.note)}</textarea>
           </label>
-        </div>
+        </div>`}
         <div class="facility-footer">
           <small>${task.history.length ? `${task.history.length} penyelesaian tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat penyelesaian"}</small>
           <button class="small-button" type="button" data-complete-facility="${task.id}">Tandai Selesai Hari Ini</button>
@@ -924,7 +938,7 @@ function renderAcServiceTasks() {
           </div>
           <span class="pill ${status.tone}">${status.label}</span>
         </div>
-        <label class="facility-check">
+        ${isViewMode ? renderFacilityReadOnly(task, "Terakhir service", "Jadwal service berikutnya") : `<label class="facility-check">
           <input type="checkbox" data-complete-ac-service="${task.id}" ${task.isCompleted ? "checked" : ""}>
           Service sudah selesai
         </label>
@@ -941,13 +955,35 @@ function renderAcServiceTasks() {
             Catatan
             <textarea data-ac-service-field="note" data-ac-service-id="${task.id}" placeholder="Contoh: teknisi, biaya, atau kondisi AC.">${escapeHtml(task.note)}</textarea>
           </label>
-        </div>
+        </div>`}
         <div class="facility-footer">
           <small>${task.history.length ? `${task.history.length} service tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat service"}</small>
         </div>
       </article>
     `;
   }).join("");
+}
+
+function renderFacilityReadOnly(task, completedLabel, dueLabel) {
+  return `
+    <div class="facility-view-grid">
+      <div>
+        <span>${completedLabel}</span>
+        <strong>${task.lastCompletedDate ? formatDate(task.lastCompletedDate) : "Belum diisi"}</strong>
+      </div>
+      <div>
+        <span>${dueLabel}</span>
+        <strong>${task.nextDueDate ? formatDate(task.nextDueDate) : "Belum diisi"}</strong>
+      </div>
+      <div class="wide-field">
+        <span>Catatan</span>
+        <strong>${task.note ? escapeHtml(task.note) : "Belum ada catatan"}</strong>
+      </div>
+    </div>
+    <div class="facility-footer">
+      <small>${task.history.length ? `${task.history.length} penyelesaian tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat penyelesaian"}</small>
+    </div>
+  `;
 }
 
 function getFacilityTaskStatus(task) {
@@ -1009,7 +1045,11 @@ function renderBookings() {
           ${booking.note ? `<p>${escapeHtml(booking.note)}</p>` : ""}
         </div>
         <div class="booking-payment-stack">
-          <label class="mini-check">
+          ${isViewMode ? `
+          <span class="mini-status">${booking.dpPaid ? "Lunas" : "Belum lunas"} · DP ${formatCurrency(booking.dpAmount)}</span>
+          <span class="mini-status">${booking.payment1Paid ? "Lunas" : "Belum lunas"} · Payment 1 ${formatCurrency(booking.payment1Amount)}</span>
+          <span class="mini-status">${booking.payment2Paid ? "Lunas" : "Belum lunas"} · Payment 2 ${formatCurrency(booking.payment2Amount)}</span>
+          ` : `<label class="mini-check">
             <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="dpPaid" ${booking.dpPaid ? "checked" : ""}>
             DP ${formatCurrency(booking.dpAmount)}
           </label>
@@ -1020,13 +1060,13 @@ function renderBookings() {
           <label class="mini-check">
             <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="payment2Paid" ${booking.payment2Paid ? "checked" : ""}>
             Payment 2 ${formatCurrency(booking.payment2Amount)}
-          </label>
+          </label>`}
           <strong>Terbayar ${formatCurrency(totalPaid)}</strong>
           <small>Total tagihan ${formatCurrency(totalAmount)}</small>
-          <div class="booking-row-actions">
+          ${isViewMode ? "" : `<div class="booking-row-actions">
             <button class="small-button" type="button" data-edit-booking="${booking.id}">Edit</button>
             <button class="small-button" type="button" data-delete-booking="${booking.id}">Hapus</button>
-          </div>
+          </div>`}
         </div>
       </article>
     `;
@@ -1046,10 +1086,10 @@ function renderDebts() {
 
   debtList.innerHTML = debts.length ? debts.map((debt) => `
     <article class="debt-item ${debt.isPaid ? "paid" : ""}">
-      <label class="debt-check">
+      ${isViewMode ? `<span class="pill ${debt.isPaid ? "safe" : "warning"}">${debt.isPaid ? "Sudah lunas" : "Belum lunas"}</span>` : `<label class="debt-check">
         <input type="checkbox" data-toggle-debt="${debt.id}" ${debt.isPaid ? "checked" : ""}>
         <span>${debt.isPaid ? "Sudah lunas" : "Belum lunas"}</span>
-      </label>
+      </label>`}
       <div class="debt-main">
         <strong>${escapeHtml(debt.description)}</strong>
         <small>${debt.category} · ${formatDate(debt.date)}</small>
@@ -1058,10 +1098,10 @@ function renderDebts() {
       <div class="debt-amount">
         <strong>${formatCurrency(debt.amount)}</strong>
         ${debt.paidAt ? `<small>Dilunasi ${formatDate(debt.paidAt)}</small>` : ""}
-        <div class="debt-row-actions">
+        ${isViewMode ? "" : `<div class="debt-row-actions">
           <button class="small-button" type="button" data-edit-debt="${debt.id}">Edit</button>
           <button class="small-button" type="button" data-delete-debt="${debt.id}">Hapus</button>
-        </div>
+        </div>`}
       </div>
     </article>
   `).join("") : `<div class="empty-state">Belum ada hutang tercatat sampai periode ini.</div>`;
@@ -1199,6 +1239,7 @@ tabButtons.forEach((button) => {
 
 rateSettingsForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (isViewMode) return;
 
   const requestedRates = {};
   rateSettingsForm.querySelectorAll("[data-room-rate]").forEach((input) => {
@@ -1219,6 +1260,8 @@ roomBoard.addEventListener("click", (event) => {
 });
 
 detailPanel.addEventListener("change", (event) => {
+  if (isViewMode) return;
+
   const action = event.target.dataset.action;
   if (!action) return;
 
@@ -1235,6 +1278,8 @@ detailPanel.addEventListener("change", (event) => {
 });
 
 detailPanel.addEventListener("click", (event) => {
+  if (isViewMode) return;
+
   if (event.target.id !== "addNoteBtn") return;
 
   const noteInput = document.querySelector("#noteInput");
@@ -1251,6 +1296,8 @@ detailPanel.addEventListener("click", (event) => {
 });
 
 facilityTaskList.addEventListener("change", (event) => {
+  if (isViewMode) return;
+
   const taskId = event.target.dataset.facilityId;
   const field = event.target.dataset.facilityField;
   if (!taskId || !field) return;
@@ -1262,6 +1309,8 @@ facilityTaskList.addEventListener("change", (event) => {
 });
 
 facilityTaskList.addEventListener("click", (event) => {
+  if (isViewMode) return;
+
   const button = event.target.closest("[data-complete-facility]");
   if (!button) return;
 
@@ -1279,6 +1328,8 @@ acServiceRoomFilter.addEventListener("change", () => {
 });
 
 acServiceTaskList.addEventListener("change", (event) => {
+  if (isViewMode) return;
+
   const taskId = event.target.dataset.acServiceId || event.target.dataset.completeAcService;
   if (!taskId) return;
 
@@ -1301,6 +1352,7 @@ acServiceTaskList.addEventListener("change", (event) => {
 
 bookingForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (isViewMode) return;
 
   const booking = {
     id: editingBookingId || crypto.randomUUID(),
@@ -1330,6 +1382,8 @@ bookingForm.addEventListener("submit", (event) => {
 });
 
 bookingList.addEventListener("click", (event) => {
+  if (isViewMode) return;
+
   const editButton = event.target.closest("[data-edit-booking]");
   if (editButton) {
     const booking = activeMonthData().bookings.find((item) => item.id === editButton.dataset.editBooking);
@@ -1346,6 +1400,8 @@ bookingList.addEventListener("click", (event) => {
 });
 
 bookingList.addEventListener("change", (event) => {
+  if (isViewMode) return;
+
   const checkbox = event.target.closest("[data-toggle-booking]");
   if (!checkbox) return;
 
@@ -1363,6 +1419,7 @@ bookingCancelEditBtn.addEventListener("click", () => {
 
 debtForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (isViewMode) return;
 
   const existingDebt = editingDebtId ? findDebtById(editingDebtId) : null;
   const debt = {
@@ -1389,6 +1446,8 @@ debtForm.addEventListener("submit", (event) => {
 });
 
 debtList.addEventListener("change", (event) => {
+  if (isViewMode) return;
+
   const checkbox = event.target.closest("[data-toggle-debt]");
   if (!checkbox) return;
 
@@ -1401,6 +1460,8 @@ debtList.addEventListener("change", (event) => {
 });
 
 debtList.addEventListener("click", (event) => {
+  if (isViewMode) return;
+
   const editButton = event.target.closest("[data-edit-debt]");
   if (editButton) {
     const debt = findDebtById(editButton.dataset.editDebt);
@@ -1444,6 +1505,8 @@ yearSelect.addEventListener("change", () => {
 });
 
 resetDataBtn.addEventListener("click", () => {
+  if (isViewMode) return;
+
   const confirmed = window.confirm("Reset semua perubahan status, catatan, booking, dan hutang ke data awal?");
   if (!confirmed) return;
 

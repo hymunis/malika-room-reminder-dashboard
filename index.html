@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malika Room Reminder Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260602-rate-settings">
+  <link rel="stylesheet" href="style.css?v=20260602-view-mode">
 </head>
 <body>
   <div class="app-shell">
@@ -23,7 +23,9 @@
           <select id="monthSelect" aria-label="Pilih bulan tracking"></select>
         </label>
         <div class="sync-status" id="syncStatus">Local storage</div>
-        <button class="ghost-button" id="resetDataBtn" type="button">Reset Data</button>
+        <div class="access-mode-badge" id="accessModeBadge">Mode Editing</div>
+        <a class="mode-link" id="viewModeLink" href="?mode=view" target="_blank" rel="noopener">Buka Viewing</a>
+        <button class="ghost-button" id="resetDataBtn" type="button" data-edit-only>Reset Data</button>
       </div>
     </header>
 
@@ -81,7 +83,7 @@
       </section>
 
       <section class="tab-panel" data-tab-panel="rooms">
-        <details class="rate-settings section-block">
+        <details class="rate-settings section-block" data-edit-only>
           <summary>
             <div>
               <h2>Penyesuaian Harga</h2>
@@ -183,7 +185,7 @@
               <p>Catat calon penghuni yang booking atau sudah DP sebelum kamar tersedia.</p>
             </div>
           </div>
-          <form class="booking-form" id="bookingForm">
+          <form class="booking-form" id="bookingForm" data-edit-only>
             <label>
               Nomor kamar
               <select id="bookingRoomId" required></select>
@@ -249,7 +251,7 @@
             </div>
             <div class="debt-summary" id="debtSummary"></div>
           </div>
-          <form class="debt-form" id="debtForm">
+          <form class="debt-form" id="debtForm" data-edit-only>
             <label>
               Kategori hutang
               <select id="debtCategory" required>
@@ -286,6 +288,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260602-rate-settings"></script>
+  <script src="app.js?v=20260602-view-mode"></script>
 </body>
 </html>
