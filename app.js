@@ -15,6 +15,12 @@ const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Denda (> 1 Minggu)", "
 const roomStatusOptions = ["Terisi", "Kosong", "Renovasi/Upgrade", "Maintenance"];
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
 const debtCategoryOptions = ["Biaya Internet", "Pembelian Barang", "Pembayaran Jasa", "Lainnya"];
+const baseFacilityTasks = [
+  { id: "clean-water-tank", title: "Cleaning Torn Air" },
+  { id: "clean-fridge", title: "Cleaning Kulkas" },
+  { id: "buy-water-gallons", title: "Pembelian Air Galon" },
+  { id: "buy-kitchen-gas", title: "Pembelian Gas Dapur" }
+];
 const roomTypeGroups = [
   { type: "Standard", description: "Bulanan", tone: "standard" },
   { type: "Plus Room", description: "Semesteran, 6 bulan", tone: "standard-plus" },
@@ -58,6 +64,8 @@ const detailPanel = document.querySelector("#detailPanel");
 const paymentPriorityList = document.querySelector("#paymentPriorityList");
 const acPriorityList = document.querySelector("#acPriorityList");
 const roomProjectPriorityList = document.querySelector("#roomProjectPriorityList");
+const facilityPriorityList = document.querySelector("#facilityPriorityList");
+const facilityTaskList = document.querySelector("#facilityTaskList");
 const bookingForm = document.querySelector("#bookingForm");
 const bookingRoomId = document.querySelector("#bookingRoomId");
 const bookingPlannedCheckIn = document.querySelector("#bookingPlannedCheckIn");
@@ -97,6 +105,7 @@ function normalizeStoredState(stored) {
     monthlyData: {
       [defaultMonthKey]: createMonthData(defaultMonthKey, true)
     },
+    facilityTasks: normalizeFacilityTasks([]),
     selectedMonth: defaultMonthKey,
     selectedYear: currentYear,
     selectedRoomId: "A4"
@@ -116,6 +125,7 @@ function normalizeStoredState(stored) {
 
     return {
       monthlyData,
+      facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
       selectedMonth: stored.selectedMonth || defaultMonthKey,
       selectedYear: stored.selectedYear || getYearFromMonthKey(stored.selectedMonth || defaultMonthKey),
       selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
@@ -130,6 +140,7 @@ function normalizeStoredState(stored) {
           expenses: Array.isArray(stored.expenses) ? stored.expenses : seedExpenses(defaultMonthKey)
         }, defaultMonthKey)
       },
+      facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
       selectedMonth: defaultMonthKey,
       selectedYear: currentYear,
       selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
@@ -137,6 +148,19 @@ function normalizeStoredState(stored) {
   }
 
   return fallback;
+}
+
+function normalizeFacilityTasks(tasks = []) {
+  return baseFacilityTasks.map((baseTask) => {
+    const savedTask = tasks.find((task) => task.id === baseTask.id) || {};
+    return {
+      ...baseTask,
+      lastCompletedDate: savedTask.lastCompletedDate || "",
+      nextDueDate: savedTask.nextDueDate || "",
+      note: savedTask.note || "",
+      history: Array.isArray(savedTask.history) ? savedTask.history : []
+    };
+  });
 }
 
 function saveState() {
@@ -549,6 +573,7 @@ function render() {
   renderPriorityDashboard();
   renderRoomBoard();
   renderDetail();
+  renderFacilityTasks();
   renderBookings();
   renderDebts();
   saveState();
@@ -763,6 +788,7 @@ function renderPriorityDashboard() {
   const paymentRooms = rooms.filter((room) => ["Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"].includes(room.paymentStatus));
   const acRooms = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus));
   const projectRooms = rooms.filter((room) => ["Kosong", "Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus));
+  const facilityTasks = state.facilityTasks.filter((task) => getFacilityTaskStatus(task).tone !== "safe");
 
   paymentPriorityList.innerHTML = renderRoomPriorityItems(
     paymentRooms,
@@ -779,6 +805,18 @@ function renderPriorityDashboard() {
     (room) => room.roomStatus,
     (room) => room.checkOutDate ? `Check-out ${formatDate(room.checkOutDate)}` : "Pantau progres dan target kesiapan kamar"
   );
+  facilityPriorityList.innerHTML = facilityTasks.length ? facilityTasks.map((task) => {
+    const status = getFacilityTaskStatus(task);
+    return `
+      <article class="priority-item">
+        <div>
+          <strong>${escapeHtml(task.title)}</strong>
+          <small>${status.detail}</small>
+        </div>
+        <span class="pill ${status.tone}">${status.label}</span>
+      </article>
+    `;
+  }).join("") : `<div class="empty-state">Tidak ada jadwal luar kamar yang perlu ditindaklanjuti.</div>`;
 }
 
 function renderRoomPriorityItems(rooms, statusText, detailText) {
@@ -791,6 +829,72 @@ function renderRoomPriorityItems(rooms, statusText, detailText) {
       <span class="pill ${pillTone(statusText(room))}">${statusText(room)}</span>
     </article>
   `).join("") : `<div class="empty-state">Tidak ada item yang perlu ditindaklanjuti.</div>`;
+}
+
+function renderFacilityTasks() {
+  facilityTaskList.innerHTML = state.facilityTasks.map((task) => {
+    const status = getFacilityTaskStatus(task);
+    return `
+      <article class="facility-item">
+        <div class="facility-item-header">
+          <div>
+            <h3>${escapeHtml(task.title)}</h3>
+            <p>${status.detail}</p>
+          </div>
+          <span class="pill ${status.tone}">${status.label}</span>
+        </div>
+        <div class="facility-controls">
+          <label>
+            Terakhir selesai
+            <input type="date" data-facility-field="lastCompletedDate" data-facility-id="${task.id}" value="${task.lastCompletedDate}">
+          </label>
+          <label>
+            Jadwal berikutnya
+            <input type="date" data-facility-field="nextDueDate" data-facility-id="${task.id}" value="${task.nextDueDate}">
+          </label>
+          <label class="wide-field">
+            Catatan
+            <textarea data-facility-field="note" data-facility-id="${task.id}" placeholder="Tambahkan konteks atau kebutuhan berikutnya.">${escapeHtml(task.note)}</textarea>
+          </label>
+        </div>
+        <div class="facility-footer">
+          <small>${task.history.length ? `${task.history.length} penyelesaian tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat penyelesaian"}</small>
+          <button class="small-button" type="button" data-complete-facility="${task.id}">Tandai Selesai Hari Ini</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function getFacilityTaskStatus(task) {
+  if (!task.nextDueDate) {
+    return {
+      label: "Belum dijadwalkan",
+      detail: "Isi jadwal berikutnya agar reminder aktif.",
+      tone: "warning"
+    };
+  }
+
+  const dueIn = daysUntil(task.nextDueDate);
+  if (dueIn < 0) {
+    return {
+      label: "Terlambat",
+      detail: `Jadwal terlewat ${Math.abs(dueIn)} hari · ${formatDate(task.nextDueDate)}`,
+      tone: "danger"
+    };
+  }
+  if (dueIn <= 7) {
+    return {
+      label: "Segera",
+      detail: `Jadwal dalam ${dueIn} hari · ${formatDate(task.nextDueDate)}`,
+      tone: "warning"
+    };
+  }
+  return {
+    label: "Terjadwal",
+    detail: `Jadwal berikutnya ${formatDate(task.nextDueDate)}`,
+    tone: "safe"
+  };
 }
 
 function renderBookings() {
@@ -1037,6 +1141,30 @@ detailPanel.addEventListener("click", (event) => {
       ...(room.notes || [])
     ]
   }));
+});
+
+facilityTaskList.addEventListener("change", (event) => {
+  const taskId = event.target.dataset.facilityId;
+  const field = event.target.dataset.facilityField;
+  if (!taskId || !field) return;
+
+  state.facilityTasks = state.facilityTasks.map((task) => {
+    return task.id === taskId ? { ...task, [field]: event.target.value.trim() } : task;
+  });
+  render();
+});
+
+facilityTaskList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-complete-facility]");
+  if (!button) return;
+
+  const completedDate = localDateString(new Date());
+  state.facilityTasks = state.facilityTasks.map((task) => {
+    if (task.id !== button.dataset.completeFacility) return task;
+    const history = task.history[0] === completedDate ? task.history : [completedDate, ...task.history];
+    return { ...task, lastCompletedDate: completedDate, history };
+  });
+  render();
 });
 
 bookingForm.addEventListener("submit", (event) => {
