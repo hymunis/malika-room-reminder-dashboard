@@ -9,8 +9,8 @@ const monthNames = [
 const now = new Date();
 const currentYear = now.getFullYear();
 const defaultMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Cicil", "Dispensasi"];
-const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"];
+const paymentOptions = ["Lunas", "Belum Bayar", "Telat (Denda)", "Dispensasi"];
+const roomStatusOptions = ["Terisi", "Kosong", "Renovasi/Upgrade", "Maintenance"];
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
 const debtCategoryOptions = ["Biaya Internet", "Pembelian Barang", "Pembayaran Jasa", "Lainnya"];
 const roomTypeGroups = [
@@ -21,23 +21,23 @@ const roomTypeGroups = [
 ];
 
 const baseRooms = [
-  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B7", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A6", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A8", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A2", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A3", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A7", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B8", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B9", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" }
+  { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B4", type: "Deluxe", scheme: "Tahunan", rate: 16500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B1", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B2", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B7", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A6", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A8", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A2", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A3", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A7", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B8", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B9", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" }
 ];
 
 let state = loadState();
@@ -178,6 +178,8 @@ function normalizeMonthData(monthData, monthKey) {
         rate: baseRoom.rate,
         hasAc: baseRoom.hasAc,
         acStatus: baseRoom.hasAc ? roomData.acStatus || baseRoom.acStatus : undefined,
+        paymentStatus: normalizeRoomPaymentStatus(roomData.paymentStatus || baseRoom.paymentStatus),
+        roomStatus: normalizeRoomStatus(roomData.roomStatus || baseRoom.roomStatus),
         residentName: roomData.residentName || "",
         checkInDate: roomData.checkInDate || "",
         paymentDueDate: roomData.paymentDueDate || "",
@@ -190,6 +192,20 @@ function normalizeMonthData(monthData, monthKey) {
     debts: Array.isArray(monthData.debts) ? monthData.debts.map(normalizeDebt) : [],
     carriedContextFrom: monthData.carriedContextFrom || ""
   };
+}
+
+function normalizeRoomPaymentStatus(status) {
+  if (status === "Telat") return "Telat (Denda)";
+  if (status === "Cicil") return "Belum Bayar";
+  return paymentOptions.includes(status) ? status : "Lunas";
+}
+
+function normalizeRoomStatus(status) {
+  if (status === "Normal") return "Terisi";
+  if (status === "Renovasi" || status === "Upgrade") return "Renovasi/Upgrade";
+  if (status === "Maintenance Ringan") return "Maintenance";
+  if (status === "Blocked") return "Kosong";
+  return roomStatusOptions.includes(status) ? status : "Terisi";
 }
 
 function normalizeBooking(booking) {
@@ -306,7 +322,7 @@ function hydrateCarriedRoomContext(monthKey, monthData) {
 }
 
 function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom) {
-  const baseRoomStatus = baseRoom.roomStatus || "Normal";
+  const baseRoomStatus = baseRoom.roomStatus || "Terisi";
   const room = {
     ...baseRoom,
     ...currentRoom,
@@ -344,7 +360,7 @@ function createCarriedRoom(baseRoom, previousRoom) {
     paymentDueDate: "",
     checkOutDate: previousRoom.checkOutDate || "",
     paymentStatus: "Belum Bayar",
-    roomStatus: previousRoom.roomStatus || baseRoom.roomStatus || "Normal",
+    roomStatus: previousRoom.roomStatus || baseRoom.roomStatus || "Terisi",
     acStatus: previousRoom.acStatus || baseRoom.acStatus,
     notes: [...(previousRoom.notes || [])]
   };
@@ -372,7 +388,7 @@ function monthHasCarryContext(monthData) {
 }
 
 function roomHasCarryContext(room, baseRoom) {
-  const baseRoomStatus = baseRoom.roomStatus || "Normal";
+  const baseRoomStatus = baseRoom.roomStatus || "Terisi";
   return Boolean(
     room?.residentName ||
     room?.checkOutDate ||
@@ -507,14 +523,13 @@ function currentOutstandingDebts() {
 }
 
 function getRoomTone(room) {
-  if (room.roomStatus === "Kosong" || room.roomStatus === "Blocked") return "empty";
-  if (room.roomStatus === "Renovasi" || room.roomStatus === "Upgrade") return "project";
-  if (room.paymentStatus === "Telat") return "danger";
+  if (room.roomStatus === "Kosong") return "empty";
+  if (room.roomStatus === "Renovasi/Upgrade") return "project";
+  if (room.paymentStatus === "Telat (Denda)") return "danger";
   if (
     room.paymentStatus === "Belum Bayar" ||
-    room.paymentStatus === "Cicil" ||
     room.paymentStatus === "Dispensasi" ||
-    room.roomStatus === "Maintenance Ringan" ||
+    room.roomStatus === "Maintenance" ||
     room.acStatus === "Perlu Service" ||
     room.acStatus === "Service Terjadwal"
   ) return "warning";
@@ -523,10 +538,10 @@ function getRoomTone(room) {
 }
 
 function pillTone(value) {
-  if (value === "Telat" || value === "Perlu Service") return "danger";
-  if (["Belum Bayar", "Cicil", "Dispensasi", "Maintenance Ringan", "Service Terjadwal"].includes(value)) return "warning";
-  if (["Renovasi", "Upgrade"].includes(value)) return "project";
-  if (value === "Lunas" || value === "Normal" || value === "Aman" || value === "Selesai Service") return "safe";
+  if (value === "Telat (Denda)" || value === "Perlu Service") return "danger";
+  if (["Belum Bayar", "Dispensasi", "Maintenance", "Service Terjadwal"].includes(value)) return "warning";
+  if (value === "Renovasi/Upgrade") return "project";
+  if (value === "Lunas" || value === "Terisi" || value === "Aman" || value === "Selesai Service") return "safe";
   return "";
 }
 
@@ -542,19 +557,17 @@ function render() {
 
 function renderSummary() {
   const rooms = activeMonthData().rooms;
-  const paymentFollowUp = rooms.filter((room) => ["Belum Bayar", "Telat", "Dispensasi"].includes(room.paymentStatus)).length;
-  const installments = rooms.filter((room) => room.paymentStatus === "Cicil").length;
+  const paymentFollowUp = rooms.filter((room) => ["Belum Bayar", "Telat (Denda)", "Dispensasi"].includes(room.paymentStatus)).length;
   const acService = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus)).length;
-  const projects = rooms.filter((room) => ["Renovasi", "Upgrade", "Maintenance Ringan"].includes(room.roomStatus)).length;
+  const projects = rooms.filter((room) => ["Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus)).length;
   const unpaidDebts = currentOutstandingDebts();
   const unpaidDebtTotal = unpaidDebts.reduce((total, debt) => total + Number(debt.amount), 0);
 
   const cards = [
     { label: "Total kamar", value: rooms.length, hint: `Periode ${selectedMonthName()}` },
     { label: "Pembayaran perlu follow-up", value: paymentFollowUp, hint: "Belum bayar, telat, dispensasi" },
-    { label: "Cicilan aktif", value: installments, hint: "Perlu pantau jadwal cicil" },
     { label: "AC perlu service", value: acService, hint: "Hanya kamar Deluxe & Eksklusif" },
-    { label: "Kamar renovasi/upgrade", value: projects, hint: "Termasuk maintenance ringan" },
+    { label: "Kamar renovasi/upgrade", value: projects, hint: "Termasuk maintenance" },
     { label: "Hutang belum lunas", value: formatCurrency(unpaidDebtTotal), hint: `${unpaidDebts.length} transaksi perlu ditutup` }
   ];
 
@@ -623,7 +636,7 @@ function toneLabel(tone) {
   const labels = {
     safe: "Aman",
     warning: "Perhatian",
-    danger: "Telat",
+    danger: "Telat (Denda)",
     project: "Proyek",
     empty: "Kosong"
   };
@@ -748,9 +761,9 @@ function renderDetail() {
 
 function renderPriorityDashboard() {
   const rooms = activeMonthData().rooms;
-  const paymentRooms = rooms.filter((room) => ["Belum Bayar", "Telat", "Cicil", "Dispensasi"].includes(room.paymentStatus));
+  const paymentRooms = rooms.filter((room) => ["Belum Bayar", "Telat (Denda)", "Dispensasi"].includes(room.paymentStatus));
   const acRooms = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus));
-  const projectRooms = rooms.filter((room) => ["Kosong", "Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"].includes(room.roomStatus));
+  const projectRooms = rooms.filter((room) => ["Kosong", "Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus));
 
   paymentPriorityList.innerHTML = renderRoomPriorityItems(
     paymentRooms,
