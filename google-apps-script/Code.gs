@@ -72,7 +72,7 @@ function syncReadableTabs_(state) {
         monthKey,
         room.id || "",
         room.type || "",
-        room.rentScheme || room.scheme || "",
+        room.scheme || "",
         room.residentName || "",
         getPaymentDueDate_(room),
         room.checkInDate || "",

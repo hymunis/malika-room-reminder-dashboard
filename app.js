@@ -12,12 +12,10 @@ const defaultMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2,
 const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Cicil", "Dispensasi"];
 const roomStatusOptions = ["Normal", "Kosong", "Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"];
 const acStatusOptions = ["Aman", "Perlu Service", "Service Terjadwal", "Selesai Service"];
-const flexibleRentTypes = ["Standard", "Standard+"];
-const rentSchemeOptions = ["Bulanan", "Semesteran"];
 const debtCategoryOptions = ["Biaya Internet", "Pembelian Barang", "Pembayaran Jasa", "Lainnya"];
 const roomTypeGroups = [
-  { type: "Standard", description: "Bulanan atau semesteran", tone: "standard" },
-  { type: "Standard+", description: "Semesteran", tone: "standard-plus" },
+  { type: "Standard", description: "Bulanan", tone: "standard" },
+  { type: "Plus Room", description: "Semesteran, 6 bulan", tone: "standard-plus" },
   { type: "Eksklusif", description: "Tahunan, ber-AC", tone: "exclusive" },
   { type: "Deluxe", description: "Tahunan, ber-AC", tone: "deluxe" }
 ];
@@ -32,14 +30,14 @@ const baseRooms = [
   { id: "B3", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A6", type: "Standard+", scheme: "Bulanan / Semesteran", rentScheme: "Semesteran", monthlyRate: 1000000, semesterRate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A8", type: "Standard+", scheme: "Bulanan / Semesteran", rentScheme: "Semesteran", monthlyRate: 1000000, semesterRate: 6000000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A2", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A3", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A7", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B7", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B8", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "B9", type: "Standard", scheme: "Bulanan / Semesteran", rentScheme: "Bulanan", monthlyRate: 800000, semesterRate: 5150000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" }
+  { id: "B7", type: "Eksklusif", scheme: "Tahunan", rate: 14500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Normal", acStatus: "Aman", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A6", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A8", type: "Plus Room", scheme: "Semesteran", rate: 6250000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A2", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A3", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A7", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B8", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "B9", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Normal", residentName: "", checkInDate: "", checkOutDate: "" }
 ];
 
 let state = loadState();
@@ -55,7 +53,9 @@ const tabButtons = document.querySelectorAll("[data-tab-target]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
 const roomBoard = document.querySelector("#roomBoard");
 const detailPanel = document.querySelector("#detailPanel");
-const reminderList = document.querySelector("#reminderList");
+const paymentPriorityList = document.querySelector("#paymentPriorityList");
+const acPriorityList = document.querySelector("#acPriorityList");
+const roomProjectPriorityList = document.querySelector("#roomProjectPriorityList");
 const bookingForm = document.querySelector("#bookingForm");
 const bookingRoomId = document.querySelector("#bookingRoomId");
 const bookingPlannedCheckIn = document.querySelector("#bookingPlannedCheckIn");
@@ -173,7 +173,11 @@ function normalizeMonthData(monthData, monthKey) {
       return {
         ...baseRoom,
         ...roomData,
-        rentScheme: roomData.rentScheme || baseRoom.rentScheme || baseRoom.scheme,
+        type: baseRoom.type,
+        scheme: baseRoom.scheme,
+        rate: baseRoom.rate,
+        hasAc: baseRoom.hasAc,
+        acStatus: baseRoom.hasAc ? roomData.acStatus || baseRoom.acStatus : undefined,
         residentName: roomData.residentName || "",
         checkInDate: roomData.checkInDate || "",
         paymentDueDate: roomData.paymentDueDate || "",
@@ -302,11 +306,15 @@ function hydrateCarriedRoomContext(monthKey, monthData) {
 }
 
 function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom) {
-  const baseRentScheme = baseRoom.rentScheme || baseRoom.scheme;
   const baseRoomStatus = baseRoom.roomStatus || "Normal";
   const room = {
     ...baseRoom,
     ...currentRoom,
+    type: baseRoom.type,
+    scheme: baseRoom.scheme,
+    rate: baseRoom.rate,
+    hasAc: baseRoom.hasAc,
+    acStatus: baseRoom.hasAc ? currentRoom.acStatus || previousRoom.acStatus || baseRoom.acStatus : undefined,
     notes: [...(currentRoom.notes || [])]
   };
   const isGeneratedBlankRoom = !roomHasCarryContext(currentRoom, baseRoom) &&
@@ -315,9 +323,6 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom) {
 
   if (!room.residentName && previousRoom.residentName) room.residentName = previousRoom.residentName;
   if (!room.checkOutDate && previousRoom.checkOutDate) room.checkOutDate = previousRoom.checkOutDate;
-  if ((room.rentScheme || baseRentScheme) === baseRentScheme && previousRoom.rentScheme) {
-    room.rentScheme = previousRoom.rentScheme;
-  }
   if ((room.roomStatus || baseRoomStatus) === baseRoomStatus && previousRoom.roomStatus) {
     room.roomStatus = previousRoom.roomStatus;
   }
@@ -338,7 +343,6 @@ function createCarriedRoom(baseRoom, previousRoom) {
     checkInDate: "",
     paymentDueDate: "",
     checkOutDate: previousRoom.checkOutDate || "",
-    rentScheme: previousRoom.rentScheme || baseRoom.rentScheme || baseRoom.scheme,
     paymentStatus: "Belum Bayar",
     roomStatus: previousRoom.roomStatus || baseRoom.roomStatus || "Normal",
     acStatus: previousRoom.acStatus || baseRoom.acStatus,
@@ -368,13 +372,11 @@ function monthHasCarryContext(monthData) {
 }
 
 function roomHasCarryContext(room, baseRoom) {
-  const baseRentScheme = baseRoom.rentScheme || baseRoom.scheme;
   const baseRoomStatus = baseRoom.roomStatus || "Normal";
   return Boolean(
     room?.residentName ||
     room?.checkOutDate ||
     (room?.notes || []).length ||
-    (room?.rentScheme && room.rentScheme !== baseRentScheme) ||
     (room?.roomStatus && room.roomStatus !== baseRoomStatus)
   );
 }
@@ -484,21 +486,11 @@ function formatCurrency(value) {
 }
 
 function rateLabel(room) {
-  if (isFlexibleRentRoom(room)) {
-    if (room.rentScheme === "Semesteran") return `${formatCurrency(room.semesterRate)}/semester`;
-    return `${formatCurrency(room.monthlyRate)}/bulan`;
-  }
-
   return `${formatCurrency(room.rate)}/${room.scheme.toLowerCase().replace("an", "")}`;
 }
 
 function schemeLabel(room) {
-  if (isFlexibleRentRoom(room)) return room.rentScheme;
   return room.scheme;
-}
-
-function isFlexibleRentRoom(room) {
-  return flexibleRentTypes.includes(room.type);
 }
 
 function visibleDebts() {
@@ -540,9 +532,9 @@ function pillTone(value) {
 
 function render() {
   renderSummary();
+  renderPriorityDashboard();
   renderRoomBoard();
   renderDetail();
-  renderReminders();
   renderBookings();
   renderDebts();
   saveState();
@@ -711,15 +703,6 @@ function renderDetail() {
         <input data-action="check-out-date" type="date" value="${room.checkOutDate || ""}">
       </label>
 
-      ${isFlexibleRentRoom(room) ? `
-        <label>
-          Pilihan sewa
-          <select data-action="rent-scheme">
-            ${rentSchemeOptions.map((option) => `<option value="${option}" ${room.rentScheme === option ? "selected" : ""}>${option}</option>`).join("")}
-          </select>
-        </label>
-      ` : ""}
-
       <label>
         Update pembayaran
         <select data-action="payment">
@@ -763,158 +746,39 @@ function renderDetail() {
   `;
 }
 
-function renderReminders() {
-  const reminders = buildReminders();
+function renderPriorityDashboard() {
+  const rooms = activeMonthData().rooms;
+  const paymentRooms = rooms.filter((room) => ["Belum Bayar", "Telat", "Cicil", "Dispensasi"].includes(room.paymentStatus));
+  const acRooms = rooms.filter((room) => room.hasAc && ["Perlu Service", "Service Terjadwal"].includes(room.acStatus));
+  const projectRooms = rooms.filter((room) => ["Kosong", "Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"].includes(room.roomStatus));
 
-  reminderList.innerHTML = reminders.length ? reminders.map((reminder) => `
-    <article class="reminder-item ${priorityClass(reminder.priority)}">
-      <div class="reminder-title">
-        <strong>${reminder.category}: ${reminder.title}</strong>
-        <span class="priority">${reminder.priority}</span>
+  paymentPriorityList.innerHTML = renderRoomPriorityItems(
+    paymentRooms,
+    (room) => room.paymentStatus,
+    (room) => room.paymentDueDate ? `Tanggal bayar ${formatDate(room.paymentDueDate)}` : "Tanggal bayar belum diisi"
+  );
+  acPriorityList.innerHTML = renderRoomPriorityItems(
+    acRooms,
+    (room) => room.acStatus,
+    () => "Pastikan jadwal teknisi dan akses kamar sudah dikonfirmasi"
+  );
+  roomProjectPriorityList.innerHTML = renderRoomPriorityItems(
+    projectRooms,
+    (room) => room.roomStatus,
+    (room) => room.checkOutDate ? `Check-out ${formatDate(room.checkOutDate)}` : "Pantau progres dan target kesiapan kamar"
+  );
+}
+
+function renderRoomPriorityItems(rooms, statusText, detailText) {
+  return rooms.length ? rooms.map((room) => `
+    <article class="priority-item">
+      <div>
+        <strong>${room.id} · ${escapeHtml(room.residentName || "Belum ada penghuni")}</strong>
+        <small>${detailText(room)}</small>
       </div>
-      <small>${reminder.description}</small>
+      <span class="pill ${pillTone(statusText(room))}">${statusText(room)}</span>
     </article>
-  `).join("") : `<div class="empty-state">Tidak ada reminder prioritas saat ini.</div>`;
-}
-
-function buildReminders() {
-  const reminders = [];
-
-  activeMonthData().rooms.forEach((room) => {
-    const dueDate = getPaymentDueDate(room);
-    const dueIn = daysUntil(dueDate);
-    const outIn = daysUntil(room.checkOutDate);
-
-    if (dueDate && dueIn !== null && dueIn < 0 && room.paymentStatus !== "Lunas") {
-      reminders.push({
-        category: "Pembayaran",
-        priority: "Tinggi",
-        title: `Pembayaran ${room.id} lewat ${Math.abs(dueIn)} hari`,
-        description: `Tanggal bayar periode ini: ${formatDate(dueDate)}.`
-      });
-    } else if (dueDate && dueIn !== null && dueIn >= 0 && dueIn <= 7) {
-      reminders.push({
-        category: "Pembayaran",
-        priority: dueIn <= 2 ? "Tinggi" : "Sedang",
-        title: `Pembayaran ${room.id} dalam ${dueIn} hari`,
-        description: `Tanggal bayar periode ini: ${formatDate(dueDate)}.`
-      });
-    }
-
-    if (room.checkOutDate && outIn !== null && outIn < 0) {
-      reminders.push({
-        category: "Proyek",
-        priority: "Tinggi",
-        title: `Check-out ${room.id} sudah lewat`,
-        description: `Tanggal keluar: ${formatDate(room.checkOutDate)}. Cek status kamar dan serah terima.`
-      });
-    } else if (room.checkOutDate && outIn !== null && outIn >= 0 && outIn <= 14) {
-      reminders.push({
-        category: "Proyek",
-        priority: outIn <= 3 ? "Tinggi" : "Sedang",
-        title: `Check-out ${room.id} dalam ${outIn} hari`,
-        description: `Tanggal keluar: ${formatDate(room.checkOutDate)}. Siapkan follow-up penghuni.`
-      });
-    }
-
-    if (room.paymentStatus === "Telat") {
-      reminders.push({
-        category: "Pembayaran",
-        priority: "Tinggi",
-        title: `Kamar ${room.id} telat bayar`,
-        description: "Hubungi penghuni dan catat janji bayar terbaru."
-      });
-    }
-
-    if (room.paymentStatus === "Belum Bayar") {
-      reminders.push({
-        category: "Pembayaran",
-        priority: "Sedang",
-        title: `Kamar ${room.id} belum bayar`,
-        description: "Follow-up pembayaran sebelum menjadi overdue."
-      });
-    }
-
-    if (room.paymentStatus === "Cicil") {
-      reminders.push({
-        category: "Cicilan",
-        priority: "Sedang",
-        title: `Pantau cicilan ${room.id}`,
-        description: "Cek nominal masuk dan update catatan cicilan."
-      });
-    }
-
-    if (room.hasAc && room.acStatus === "Perlu Service") {
-      reminders.push({
-        category: "AC",
-        priority: "Tinggi",
-        title: `Service AC kamar ${room.id}`,
-        description: "Jadwalkan teknisi AC untuk kamar ber-AC."
-      });
-    }
-
-    if (room.hasAc && room.acStatus === "Service Terjadwal") {
-      reminders.push({
-        category: "AC",
-        priority: "Rendah",
-        title: `Konfirmasi service AC ${room.id}`,
-        description: "Pastikan jadwal teknisi dan akses kamar aman."
-      });
-    }
-
-    if (["Renovasi", "Upgrade", "Maintenance Ringan", "Blocked"].includes(room.roomStatus)) {
-      reminders.push({
-        category: "Proyek",
-        priority: room.roomStatus === "Maintenance Ringan" ? "Rendah" : "Sedang",
-        title: `${room.roomStatus} kamar ${room.id}`,
-        description: "Pantau progres, kebutuhan bahan, dan target selesai."
-      });
-    }
-  });
-
-  activeMonthData().bookings.forEach((booking) => {
-    const moveIn = daysUntil(booking.plannedCheckIn);
-    const totalPaid = getBookingPaidTotal(booking);
-    const totalAmount = getBookingTotalAmount(booking);
-
-    if (booking.paymentStatus === "Cicil") {
-      reminders.push({
-        category: "Cicilan",
-        priority: "Sedang",
-        title: `Pantau cicilan booking ${booking.roomId}`,
-        description: `${booking.prospectName} terbayar ${formatCurrency(totalPaid)} dari ${formatCurrency(totalAmount)}. Cek checklist DP, Payment 1, dan Payment 2.`
-      });
-    }
-
-    if (booking.plannedCheckIn && moveIn !== null && moveIn >= 0 && moveIn <= 14) {
-      reminders.push({
-        category: "Proyek",
-        priority: moveIn <= 3 ? "Tinggi" : "Sedang",
-        title: `Calon penghuni ${booking.roomId} masuk dalam ${moveIn} hari`,
-        description: `${booking.prospectName} dijadwalkan check-in ${formatDate(booking.plannedCheckIn)}.`
-      });
-    }
-  });
-
-  currentOutstandingDebts().forEach((debt) => {
-    reminders.push({
-      category: "Hutang",
-      priority: "Sedang",
-      title: `${debt.category} belum dilunasi`,
-      description: `${debt.description}: ${formatCurrency(debt.amount)} sejak ${formatDate(debt.date)}.`
-    });
-  });
-
-  const rank = { Tinggi: 1, Sedang: 2, Rendah: 3 };
-  return reminders.sort((a, b) => rank[a.priority] - rank[b.priority]);
-}
-
-function priorityClass(priority) {
-  return {
-    Tinggi: "high",
-    Sedang: "medium",
-    Rendah: "low"
-  }[priority];
+  `).join("") : `<div class="empty-state">Tidak ada item yang perlu ditindaklanjuti.</div>`;
 }
 
 function renderBookings() {
@@ -1140,7 +1004,6 @@ detailPanel.addEventListener("change", (event) => {
     if (action === "check-in-date") updated.checkInDate = event.target.value;
     if (action === "payment-due-date") updated.paymentDueDate = event.target.value;
     if (action === "check-out-date") updated.checkOutDate = event.target.value;
-    if (action === "rent-scheme") updated.rentScheme = event.target.value;
     if (action === "payment") updated.paymentStatus = event.target.value;
     if (action === "room-status") updated.roomStatus = event.target.value;
     if (action === "ac-status") updated.acStatus = event.target.value;

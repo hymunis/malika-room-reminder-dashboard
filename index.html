@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malika Room Reminder Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260602-tabs-debts">
+  <link rel="stylesheet" href="style.css?v=20260602-priority-tabs">
 </head>
 <body>
   <div class="app-shell">
@@ -29,12 +29,47 @@
 
     <main>
       <nav class="tab-nav" aria-label="Menu dashboard">
-        <button class="tab-button active" type="button" data-tab-target="rooms">Informasi Kamar</button>
+        <button class="tab-button active" type="button" data-tab-target="priorities">Tugas Prioritas & Reminder</button>
+        <button class="tab-button" type="button" data-tab-target="rooms">Informasi Kamar</button>
         <button class="tab-button" type="button" data-tab-target="bookings">Early Booking & DP</button>
         <button class="tab-button" type="button" data-tab-target="debts">Pencatatan Hutang</button>
       </nav>
 
-      <section class="tab-panel active" data-tab-panel="rooms">
+      <section class="tab-panel active" data-tab-panel="priorities">
+        <section class="priority-layout">
+          <section class="section-block priority-section">
+            <div class="section-heading">
+              <div>
+                <h2>Kamar Belum Bayar</h2>
+                <p>Daftar kamar yang perlu segera ditindaklanjuti pembayarannya.</p>
+              </div>
+            </div>
+            <div class="priority-list" id="paymentPriorityList"></div>
+          </section>
+
+          <section class="section-block priority-section">
+            <div class="section-heading">
+              <div>
+                <h2>Jadwal Service AC</h2>
+                <p>Pantau status service untuk kamar Deluxe dan Eksklusif.</p>
+              </div>
+            </div>
+            <div class="priority-list" id="acPriorityList"></div>
+          </section>
+
+          <section class="section-block priority-section">
+            <div class="section-heading">
+              <div>
+                <h2>Kamar Kosong / Renovasi</h2>
+                <p>Pantau kamar yang kosong, diblokir, atau sedang dalam pengerjaan.</p>
+              </div>
+            </div>
+            <div class="priority-list" id="roomProjectPriorityList"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="rooms">
         <section class="summary-grid" id="summaryGrid" aria-label="Ringkasan operasional"></section>
 
         <section class="workspace-grid">
@@ -66,15 +101,6 @@
               </div>
             </section>
 
-            <section class="section-block">
-              <div class="section-heading compact">
-                <div>
-                  <h2>Reminder Prioritas</h2>
-                  <p>Auto-generate dari status kamar, booking, dan hutang.</p>
-                </div>
-              </div>
-              <div class="reminder-list" id="reminderList"></div>
-            </section>
           </aside>
         </section>
       </section>
@@ -148,7 +174,7 @@
         <section class="section-block debt-section">
           <div class="section-heading">
             <div>
-              <h2>Pencatatan Hutang Penjaga Kost</h2>
+              <h2>Tracking Utang</h2>
               <p>Catat biaya yang dibayarkan lebih dulu oleh penjaga kost dan pantau pelunasannya.</p>
             </div>
             <div class="debt-summary" id="debtSummary"></div>
@@ -190,6 +216,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260602-tabs-debts"></script>
+  <script src="app.js?v=20260602-priority-tabs"></script>
 </body>
 </html>
