@@ -958,12 +958,30 @@ textarea:focus {
 }
 
 .note-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
   padding: 10px;
 }
 
 .note-item p {
   margin-bottom: 4px;
   line-height: 1.45;
+}
+
+.note-row-actions,
+.history-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.note-row-actions .small-button,
+.history-actions .small-button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 0.72rem;
 }
 
 .note-item small,
@@ -1139,6 +1157,10 @@ textarea:focus {
   background: #fff;
 }
 
+.ac-service-card {
+  gap: 10px;
+}
+
 .facility-item-header,
 .facility-footer {
   display: flex;
@@ -1163,6 +1185,39 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.ac-service-quick {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.85fr) minmax(150px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+.ac-service-stat {
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.ac-service-stat span,
+.ac-service-stat strong {
+  display: block;
+}
+
+.ac-service-stat span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ac-service-stat strong {
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 0.86rem;
 }
 
 .facility-view-grid {
@@ -1221,6 +1276,44 @@ textarea:focus {
 .facility-footer small {
   color: var(--muted);
   font-weight: 700;
+}
+
+.history-list {
+  display: grid;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.history-heading {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.history-item span,
+.history-empty {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.history-empty {
+  padding: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
 }
 
 .empty-state {
@@ -1305,6 +1398,7 @@ textarea:focus {
     .debt-item,
     .facility-controls,
     .facility-view-grid,
+    .ac-service-quick,
     .rate-settings-form {
     grid-template-columns: 1fr;
   }
@@ -1321,7 +1415,9 @@ textarea:focus {
   .debt-item,
   .reminder-title,
   .room-group-header,
-  .booking-heading {
+  .booking-heading,
+  .note-item,
+  .history-item {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -1333,7 +1429,9 @@ textarea:focus {
   .booking-row-actions,
   .booking-form-actions,
   .debt-form-actions,
-  .rate-settings-actions {
+  .rate-settings-actions,
+  .note-row-actions,
+  .history-actions {
     justify-content: flex-start;
   }
 

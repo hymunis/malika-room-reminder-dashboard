@@ -825,10 +825,16 @@ function renderDetail() {
     </div>`}
 
     <div class="notes-list">
-      ${(room.notes || []).length ? room.notes.map((note) => `
+      ${(room.notes || []).length ? room.notes.map((note, index) => `
         <article class="note-item">
-          <p>${escapeHtml(note.text)}</p>
-          <small>${note.date}</small>
+          <div>
+            <p>${escapeHtml(note.text)}</p>
+            <small>${note.date}</small>
+          </div>
+          ${isViewMode ? "" : `<div class="note-row-actions">
+            <button class="small-button" type="button" data-edit-note="${index}">Edit</button>
+            <button class="small-button" type="button" data-delete-note="${index}">Hapus</button>
+          </div>`}
         </article>
       `).join("") : `<div class="empty-state">Belum ada catatan untuk kamar ini.</div>`}
     </div>
@@ -916,10 +922,11 @@ function renderFacilityTasks() {
             <textarea data-facility-field="note" data-facility-id="${task.id}" placeholder="Tambahkan konteks atau kebutuhan berikutnya.">${escapeHtml(task.note)}</textarea>
           </label>
         </div>`}
-        <div class="facility-footer">
+        ${isViewMode ? "" : `<div class="facility-footer">
           <small>${task.history.length ? `${task.history.length} penyelesaian tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat penyelesaian"}</small>
           <button class="small-button" type="button" data-complete-facility="${task.id}">Tandai Selesai Hari Ini</button>
-        </div>
+        </div>`}
+        ${renderHistoryList(task, "facility", "Riwayat selesai")}
       </article>
     `;
   }).join("");
@@ -930,7 +937,7 @@ function renderAcServiceTasks() {
   acServiceTaskList.innerHTML = tasks.map((task) => {
     const status = getAcServiceTaskStatus(task);
     return `
-      <article class="facility-item">
+      <article class="facility-item ac-service-card">
         <div class="facility-item-header">
           <div>
             <h3>Service AC kamar ${task.roomId}</h3>
@@ -938,27 +945,25 @@ function renderAcServiceTasks() {
           </div>
           <span class="pill ${status.tone}">${status.label}</span>
         </div>
-        ${isViewMode ? renderFacilityReadOnly(task, "Terakhir service", "Jadwal service berikutnya") : `<label class="facility-check">
-          <input type="checkbox" data-complete-ac-service="${task.id}" ${task.isCompleted ? "checked" : ""}>
-          Service sudah selesai
-        </label>
-        <div class="facility-controls">
+        ${isViewMode ? renderFacilityReadOnly(task, "Terakhir service", "Jadwal service berikutnya") : `<div class="ac-service-quick">
+          <div class="ac-service-stat">
+            <span>Terakhir service</span>
+            <strong>${task.lastCompletedDate ? formatDate(task.lastCompletedDate) : "Belum ada"}</strong>
+          </div>
           <label>
-            Terakhir service
-            <input type="date" data-ac-service-field="lastCompletedDate" data-ac-service-id="${task.id}" value="${task.lastCompletedDate}">
-          </label>
-          <label>
-            Jadwal service berikutnya
+            Jadwal berikutnya
             <input type="date" data-ac-service-field="nextDueDate" data-ac-service-id="${task.id}" value="${task.nextDueDate}">
           </label>
           <label class="wide-field">
             Catatan
-            <textarea data-ac-service-field="note" data-ac-service-id="${task.id}" placeholder="Contoh: teknisi, biaya, atau kondisi AC.">${escapeHtml(task.note)}</textarea>
+            <input data-ac-service-field="note" data-ac-service-id="${task.id}" value="${escapeHtml(task.note)}" placeholder="Teknisi, biaya, atau kondisi AC">
           </label>
         </div>`}
-        <div class="facility-footer">
+        ${isViewMode ? "" : `<div class="facility-footer">
           <small>${task.history.length ? `${task.history.length} service tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat service"}</small>
-        </div>
+          <button class="small-button" type="button" data-complete-ac-service="${task.id}">Tandai Selesai Hari Ini</button>
+        </div>`}
+        ${renderHistoryList(task, "ac-service", "Riwayat service")}
       </article>
     `;
   }).join("");
@@ -980,8 +985,22 @@ function renderFacilityReadOnly(task, completedLabel, dueLabel) {
         <strong>${task.note ? escapeHtml(task.note) : "Belum ada catatan"}</strong>
       </div>
     </div>
-    <div class="facility-footer">
-      <small>${task.history.length ? `${task.history.length} penyelesaian tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat penyelesaian"}</small>
+  `;
+}
+
+function renderHistoryList(task, ownerType, title) {
+  return `
+    <div class="history-list">
+      <div class="history-heading">${title}</div>
+      ${task.history.length ? task.history.map((dateValue, index) => `
+        <div class="history-item">
+          <span>${formatDate(dateValue)}</span>
+          ${isViewMode ? "" : `<div class="history-actions">
+            <button class="small-button" type="button" data-edit-history="${index}" data-history-owner="${ownerType}" data-history-task="${task.id}">Edit</button>
+            <button class="small-button" type="button" data-delete-history="${index}" data-history-owner="${ownerType}" data-history-task="${task.id}">Hapus</button>
+          </div>`}
+        </div>
+      `).join("") : `<div class="history-empty">Belum ada riwayat.</div>`}
     </div>
   `;
 }
@@ -1221,6 +1240,30 @@ function updateSelectedRoom(updater) {
   render();
 }
 
+function promptForHistoryDate(currentDate) {
+  const nextDate = window.prompt("Ubah tanggal riwayat (format YYYY-MM-DD)", currentDate);
+  if (nextDate === null) return null;
+  const trimmedDate = nextDate.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+    window.alert("Format tanggal harus YYYY-MM-DD.");
+    return null;
+  }
+  return trimmedDate;
+}
+
+function updateTaskHistory(collectionName, taskId, updater) {
+  state[collectionName] = state[collectionName].map((task) => {
+    if (task.id !== taskId) return task;
+    const updatedTask = updater(task);
+    const history = [...(updatedTask.history || [])].filter(Boolean).sort().reverse();
+    return {
+      ...updatedTask,
+      history,
+      lastCompletedDate: history[0] || ""
+    };
+  });
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -1280,6 +1323,34 @@ detailPanel.addEventListener("change", (event) => {
 detailPanel.addEventListener("click", (event) => {
   if (isViewMode) return;
 
+  const editNoteButton = event.target.closest("[data-edit-note]");
+  if (editNoteButton) {
+    const noteIndex = Number(editNoteButton.dataset.editNote);
+    const currentNote = activeMonthData().rooms.find((room) => room.id === selectedRoomId)?.notes?.[noteIndex];
+    if (!currentNote) return;
+    const nextText = window.prompt("Edit catatan kamar", currentNote.text);
+    if (nextText === null || !nextText.trim()) return;
+    updateSelectedRoom((room) => ({
+      ...room,
+      notes: (room.notes || []).map((note, index) => {
+        return index === noteIndex ? { ...note, text: nextText.trim() } : note;
+      })
+    }));
+    return;
+  }
+
+  const deleteNoteButton = event.target.closest("[data-delete-note]");
+  if (deleteNoteButton) {
+    const noteIndex = Number(deleteNoteButton.dataset.deleteNote);
+    const confirmed = window.confirm("Hapus catatan kamar ini?");
+    if (!confirmed) return;
+    updateSelectedRoom((room) => ({
+      ...room,
+      notes: (room.notes || []).filter((_, index) => index !== noteIndex)
+    }));
+    return;
+  }
+
   if (event.target.id !== "addNoteBtn") return;
 
   const noteInput = document.querySelector("#noteInput");
@@ -1311,6 +1382,30 @@ facilityTaskList.addEventListener("change", (event) => {
 facilityTaskList.addEventListener("click", (event) => {
   if (isViewMode) return;
 
+  const historyButton = event.target.closest("[data-edit-history], [data-delete-history]");
+  if (historyButton) {
+    const historyIndex = Number(historyButton.dataset.editHistory ?? historyButton.dataset.deleteHistory);
+    const taskId = historyButton.dataset.historyTask;
+    if (historyButton.dataset.editHistory !== undefined) {
+      const task = state.facilityTasks.find((item) => item.id === taskId);
+      const nextDate = promptForHistoryDate(task?.history?.[historyIndex]);
+      if (!nextDate) return;
+      updateTaskHistory("facilityTasks", taskId, (item) => ({
+        ...item,
+        history: item.history.map((dateValue, index) => index === historyIndex ? nextDate : dateValue)
+      }));
+    } else {
+      const confirmed = window.confirm("Hapus riwayat ini?");
+      if (!confirmed) return;
+      updateTaskHistory("facilityTasks", taskId, (item) => ({
+        ...item,
+        history: item.history.filter((_, index) => index !== historyIndex)
+      }));
+    }
+    render();
+    return;
+  }
+
   const button = event.target.closest("[data-complete-facility]");
   if (!button) return;
 
@@ -1330,22 +1425,56 @@ acServiceRoomFilter.addEventListener("change", () => {
 acServiceTaskList.addEventListener("change", (event) => {
   if (isViewMode) return;
 
-  const taskId = event.target.dataset.acServiceId || event.target.dataset.completeAcService;
+  const taskId = event.target.dataset.acServiceId;
   if (!taskId) return;
 
   state.acServiceTasks = state.acServiceTasks.map((task) => {
     if (task.id !== taskId) return task;
-    if (event.target.dataset.completeAcService) {
-      const completedDate = localDateString(new Date());
-      const history = event.target.checked && task.history[0] !== completedDate ? [completedDate, ...task.history] : task.history;
-      return {
-        ...task,
-        isCompleted: event.target.checked,
-        lastCompletedDate: event.target.checked ? completedDate : task.lastCompletedDate,
-        history
-      };
-    }
     return { ...task, [event.target.dataset.acServiceField]: event.target.value.trim(), isCompleted: false };
+  });
+  render();
+});
+
+acServiceTaskList.addEventListener("click", (event) => {
+  if (isViewMode) return;
+
+  const historyButton = event.target.closest("[data-edit-history], [data-delete-history]");
+  if (historyButton) {
+    const historyIndex = Number(historyButton.dataset.editHistory ?? historyButton.dataset.deleteHistory);
+    const taskId = historyButton.dataset.historyTask;
+    if (historyButton.dataset.editHistory !== undefined) {
+      const task = state.acServiceTasks.find((item) => item.id === taskId);
+      const nextDate = promptForHistoryDate(task?.history?.[historyIndex]);
+      if (!nextDate) return;
+      updateTaskHistory("acServiceTasks", taskId, (item) => ({
+        ...item,
+        history: item.history.map((dateValue, index) => index === historyIndex ? nextDate : dateValue)
+      }));
+    } else {
+      const confirmed = window.confirm("Hapus riwayat service ini?");
+      if (!confirmed) return;
+      updateTaskHistory("acServiceTasks", taskId, (item) => ({
+        ...item,
+        history: item.history.filter((_, index) => index !== historyIndex)
+      }));
+    }
+    render();
+    return;
+  }
+
+  const completeButton = event.target.closest("[data-complete-ac-service]");
+  if (!completeButton) return;
+
+  const completedDate = localDateString(new Date());
+  state.acServiceTasks = state.acServiceTasks.map((task) => {
+    if (task.id !== completeButton.dataset.completeAcService) return task;
+    const history = task.history[0] === completedDate ? task.history : [completedDate, ...task.history];
+    return {
+      ...task,
+      isCompleted: true,
+      lastCompletedDate: completedDate,
+      history
+    };
   });
   render();
 });
