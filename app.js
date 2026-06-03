@@ -13,7 +13,8 @@ const currentYear = now.getFullYear();
 const defaultMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 const firstTrackingYear = 2026;
 const lastTrackingYear = 2051;
-const paymentOptions = ["Lunas", "Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"];
+const paymentOptions = ["Lunas", "Belum Bayar", "Belum Lunas (Cicil)", "Telat", "Denda (> 1 Minggu)", "Dispensasi"];
+const paymentFollowUpStatuses = ["Belum Bayar", "Belum Lunas (Cicil)", "Telat", "Denda (> 1 Minggu)", "Dispensasi"];
 const roomStatusOptions = ["Terisi", "Kosong", "Renovasi/Upgrade", "Maintenance"];
 const debtCategoryOptions = ["Biaya Internet", "Pembelian Barang", "Pembayaran Jasa", "Lainnya"];
 const baseFacilityTasks = [
@@ -276,7 +277,7 @@ function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates) {
 
 function normalizeRoomPaymentStatus(status) {
   if (status === "Telat (Denda)") return "Denda (> 1 Minggu)";
-  if (status === "Cicil") return "Belum Bayar";
+  if (status === "Cicil") return "Belum Lunas (Cicil)";
   return paymentOptions.includes(status) ? status : "Lunas";
 }
 
@@ -610,6 +611,7 @@ function getRoomTone(room) {
   if (["Telat", "Denda (> 1 Minggu)"].includes(room.paymentStatus)) return "danger";
   if (
     room.paymentStatus === "Belum Bayar" ||
+    room.paymentStatus === "Belum Lunas (Cicil)" ||
     room.paymentStatus === "Dispensasi" ||
     room.roomStatus === "Maintenance"
   ) return "warning";
@@ -619,7 +621,7 @@ function getRoomTone(room) {
 
 function pillTone(value) {
   if (["Telat", "Denda (> 1 Minggu)"].includes(value)) return "danger";
-  if (["Belum Bayar", "Dispensasi", "Maintenance"].includes(value)) return "warning";
+  if (["Belum Bayar", "Belum Lunas (Cicil)", "Dispensasi", "Maintenance"].includes(value)) return "warning";
   if (value === "Renovasi/Upgrade") return "project";
   if (value === "Lunas" || value === "Terisi" || value === "Aman" || value === "Selesai Service") return "safe";
   return "";
@@ -655,14 +657,14 @@ function applyRoomRates() {
 
 function renderSummary() {
   const rooms = activeMonthData().rooms;
-  const paymentFollowUp = rooms.filter((room) => ["Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"].includes(room.paymentStatus)).length;
+  const paymentFollowUp = rooms.filter((room) => paymentFollowUpStatuses.includes(room.paymentStatus)).length;
   const projects = rooms.filter((room) => ["Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus)).length;
   const unpaidDebts = currentOutstandingDebts();
   const unpaidDebtTotal = unpaidDebts.reduce((total, debt) => total + Number(debt.amount), 0);
 
   const cards = [
     { label: "Total kamar", value: rooms.length, hint: `Periode ${selectedMonthName()}` },
-    { label: "Pembayaran perlu follow-up", value: paymentFollowUp, hint: "Belum bayar, telat, dispensasi" },
+    { label: "Pembayaran perlu follow-up", value: paymentFollowUp, hint: "Belum bayar, cicil, telat, dispensasi" },
     { label: "Kamar renovasi/upgrade", value: projects, hint: "Termasuk maintenance" },
     { label: "Hutang belum lunas", value: formatCurrency(unpaidDebtTotal), hint: `${unpaidDebts.length} transaksi perlu ditutup` }
   ];
@@ -843,7 +845,7 @@ function renderDetail() {
 
 function renderPriorityDashboard() {
   const rooms = activeMonthData().rooms;
-  const paymentRooms = rooms.filter((room) => ["Belum Bayar", "Telat", "Denda (> 1 Minggu)", "Dispensasi"].includes(room.paymentStatus));
+  const paymentRooms = rooms.filter((room) => paymentFollowUpStatuses.includes(room.paymentStatus));
   const projectRooms = rooms.filter((room) => ["Kosong", "Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus));
   const facilityTasks = state.facilityTasks.filter((task) => getFacilityTaskStatus(task).tone !== "safe");
   const acTasks = state.acServiceTasks.filter((task) => getAcServiceTaskStatus(task).tone !== "safe");
