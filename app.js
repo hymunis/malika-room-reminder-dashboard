@@ -902,7 +902,7 @@ function renderFacilityTasks() {
   facilityTaskList.innerHTML = state.facilityTasks.map((task) => {
     const status = getFacilityTaskStatus(task);
     return `
-      <article class="facility-item">
+      <article class="facility-item ${facilityThemeClass(task.id)}">
         <div class="facility-item-header">
           <div>
             <h3>${escapeHtml(task.title)}</h3>
@@ -939,7 +939,7 @@ function renderAcServiceTasks() {
   acServiceTaskList.innerHTML = tasks.map((task) => {
     const status = getAcServiceTaskStatus(task);
     return `
-      <article class="facility-item ac-service-card">
+      <article class="facility-item ac-service-card facility-theme-ac">
         <div class="facility-item-header">
           <div>
             <h3>Service AC kamar ${task.roomId}</h3>
@@ -969,6 +969,16 @@ function renderAcServiceTasks() {
       </article>
     `;
   }).join("");
+}
+
+function facilityThemeClass(taskId) {
+  const themes = {
+    "clean-water-tank": "facility-theme-water-tank",
+    "clean-fridge": "facility-theme-fridge",
+    "buy-water-gallons": "facility-theme-gallons",
+    "buy-kitchen-gas": "facility-theme-gas"
+  };
+  return themes[taskId] || "";
 }
 
 function renderFacilityReadOnly(task, completedLabel, dueLabel) {

@@ -1157,6 +1157,31 @@ textarea:focus {
   background: #fff;
 }
 
+.facility-theme-water-tank {
+  border-left-color: #2f75d6;
+  background: linear-gradient(135deg, #edf5ff, #ffffff 62%);
+}
+
+.facility-theme-fridge {
+  border-left-color: #2e9f61;
+  background: linear-gradient(135deg, #edf9f1, #ffffff 62%);
+}
+
+.facility-theme-gallons {
+  border-left-color: #7b58d6;
+  background: linear-gradient(135deg, #f3efff, #ffffff 62%);
+}
+
+.facility-theme-gas {
+  border-left-color: #d94a3a;
+  background: linear-gradient(135deg, #fff0ee, #ffffff 62%);
+}
+
+.facility-theme-ac {
+  border-left-color: #d7a21f;
+  background: linear-gradient(135deg, #fff8dc, #ffffff 62%);
+}
+
 .ac-service-card {
   gap: 10px;
 }
