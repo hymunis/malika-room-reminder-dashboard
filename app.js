@@ -35,6 +35,17 @@ const defaultRoomRates = {
   Eksklusif: 15500000,
   Deluxe: 17500000
 };
+const editableRoomTypes = ["Standard", "Plus Room"];
+const defaultRoomTypeOverrides = {
+  A7: "Plus Room",
+  B8: "Plus Room"
+};
+const roomTypeProfiles = {
+  Standard: { scheme: "Bulanan", hasAc: false },
+  "Plus Room": { scheme: "Semesteran", hasAc: false },
+  Eksklusif: { scheme: "Tahunan", hasAc: true },
+  Deluxe: { scheme: "Tahunan", hasAc: true }
+};
 
 const baseRooms = [
   { id: "A4", type: "Deluxe", scheme: "Tahunan", rate: 17500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
@@ -95,6 +106,9 @@ const monthSelect = document.querySelector("#monthSelect");
 const syncStatus = document.querySelector("#syncStatus");
 const rateSettingsForm = document.querySelector("#rateSettingsForm");
 const rateSettingsStatus = document.querySelector("#rateSettingsStatus");
+const roomTypeSettingsForm = document.querySelector("#roomTypeSettingsForm");
+const roomTypeSettingsList = document.querySelector("#roomTypeSettingsList");
+const roomTypeSettingsStatus = document.querySelector("#roomTypeSettingsStatus");
 const accessModeBadge = document.querySelector("#accessModeBadge");
 
 accessModeBadge.textContent = isViewMode ? "Mode Viewing · Hanya lihat" : "Mode Editing";
@@ -123,11 +137,13 @@ function loadState() {
 
 function normalizeStoredState(stored) {
   const roomRates = normalizeRoomRates(stored?.roomRates);
+  const roomTypeOverrides = normalizeRoomTypeOverrides(stored?.roomTypeOverrides);
   const fallback = {
     monthlyData: {
-      [defaultMonthKey]: createMonthData(defaultMonthKey, true, roomRates)
+      [defaultMonthKey]: createMonthData(defaultMonthKey, true, roomRates, roomTypeOverrides)
     },
     roomRates,
+    roomTypeOverrides,
     facilityTasks: normalizeFacilityTasks([]),
     acServiceTasks: normalizeAcServiceTasks([]),
     selectedMonth: defaultMonthKey,
@@ -141,15 +157,16 @@ function normalizeStoredState(stored) {
     const monthlyData = {};
     Object.keys(stored.monthlyData).forEach((monthKey) => {
       const savedMonth = stored.monthlyData[monthKey];
-      monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey, roomRates);
+      monthlyData[monthKey] = normalizeMonthData(savedMonth, monthKey, roomRates, roomTypeOverrides);
     });
     if (!monthlyData[defaultMonthKey]) {
-      monthlyData[defaultMonthKey] = createMonthData(defaultMonthKey, true, roomRates);
+      monthlyData[defaultMonthKey] = createMonthData(defaultMonthKey, true, roomRates, roomTypeOverrides);
     }
 
     return {
       monthlyData,
       roomRates,
+      roomTypeOverrides,
       facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
       acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: stored.selectedMonth || defaultMonthKey,
@@ -164,9 +181,10 @@ function normalizeStoredState(stored) {
         [defaultMonthKey]: normalizeMonthData({
           rooms: stored.rooms,
           expenses: Array.isArray(stored.expenses) ? stored.expenses : seedExpenses(defaultMonthKey)
-        }, defaultMonthKey, roomRates)
+        }, defaultMonthKey, roomRates, roomTypeOverrides)
       },
       roomRates,
+      roomTypeOverrides,
       facilityTasks: normalizeFacilityTasks(stored.facilityTasks),
       acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: defaultMonthKey,
@@ -187,6 +205,37 @@ function normalizeRoomRates(roomRates = {}) {
 
 function configuredRateForRoom(room, roomRates = defaultRoomRates) {
   return Number(roomRates[room.type]) || defaultRoomRates[room.type] || Number(room.rate || 0);
+}
+
+function normalizeRoomTypeOverrides(overrides = {}) {
+  return Object.fromEntries(editableRoomIds().map((roomId) => {
+    const savedType = overrides[roomId] || defaultRoomTypeOverrides[roomId] || baseRooms.find((room) => room.id === roomId)?.type;
+    return [roomId, editableRoomTypes.includes(savedType) ? savedType : "Standard"];
+  }));
+}
+
+function editableRoomIds() {
+  return baseRooms
+    .filter((room) => editableRoomTypes.includes(room.type))
+    .map((room) => room.id)
+    .sort();
+}
+
+function configuredRoomProfile(baseRoom, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
+  if (!baseRoom?.id) return { ...baseRoom, type: "Standard", scheme: "Bulanan", hasAc: false, rate: defaultRoomRates.Standard };
+
+  const effectiveType = roomTypeOverrides[baseRoom.id] || baseRoom.type;
+  const profile = roomTypeProfiles[effectiveType] || roomTypeProfiles[baseRoom.type];
+  const room = {
+    ...baseRoom,
+    type: effectiveType,
+    scheme: profile.scheme,
+    hasAc: profile.hasAc
+  };
+  return {
+    ...room,
+    rate: configuredRateForRoom(room, roomRates)
+  };
 }
 
 function normalizeFacilityTasks(tasks = []) {
@@ -229,9 +278,9 @@ function saveState() {
   }
 }
 
-function createMonthData(monthKey, withSeedExpenses = false, roomRates = defaultRoomRates) {
+function createMonthData(monthKey, withSeedExpenses = false, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
   return {
-    rooms: baseRooms.map((room) => ({ ...room, rate: configuredRateForRoom(room, roomRates), notes: [] })),
+    rooms: baseRooms.map((room) => ({ ...configuredRoomProfile(room, roomRates, roomTypeOverrides), notes: [] })),
     bookings: [],
     expenses: withSeedExpenses ? seedExpenses(monthKey) : [],
     debts: [],
@@ -239,9 +288,10 @@ function createMonthData(monthKey, withSeedExpenses = false, roomRates = default
   };
 }
 
-function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates) {
+function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
   return {
     rooms: baseRooms.map((baseRoom) => {
+      const roomProfile = configuredRoomProfile(baseRoom, roomRates, roomTypeOverrides);
       const savedRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
       const {
         bookingStatus,
@@ -253,14 +303,14 @@ function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates) {
       } = savedRoom;
 
       return {
-        ...baseRoom,
+        ...roomProfile,
         ...roomData,
-        type: baseRoom.type,
-        scheme: baseRoom.scheme,
-        rate: configuredRateForRoom(baseRoom, roomRates),
-        hasAc: baseRoom.hasAc,
-        paymentStatus: normalizeRoomPaymentStatus(roomData.paymentStatus || baseRoom.paymentStatus),
-        roomStatus: normalizeRoomStatus(roomData.roomStatus || baseRoom.roomStatus),
+        type: roomProfile.type,
+        scheme: roomProfile.scheme,
+        rate: roomProfile.rate,
+        hasAc: roomProfile.hasAc,
+        paymentStatus: normalizeRoomPaymentStatus(roomData.paymentStatus || roomProfile.paymentStatus),
+        roomStatus: normalizeRoomStatus(roomData.roomStatus || roomProfile.roomStatus),
         residentName: roomData.residentName || "",
         checkInDate: roomData.checkInDate || "",
         paymentDueDate: roomData.paymentDueDate || "",
@@ -369,13 +419,13 @@ function activeMonthData() {
 
 function createCarriedMonthData(monthKey) {
   const previousKey = findPreviousCarryMonthKey(monthKey);
-  if (!previousKey) return createMonthData(monthKey, false, state.roomRates);
+  if (!previousKey) return createMonthData(monthKey, false, state.roomRates, state.roomTypeOverrides);
 
   const previousData = state.monthlyData[previousKey];
   return {
     rooms: baseRooms.map((baseRoom) => {
       const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
-      return createCarriedRoom(baseRoom, previousRoom, state.roomRates);
+      return createCarriedRoom(baseRoom, previousRoom, state.roomRates, state.roomTypeOverrides);
     }),
     bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
     expenses: [],
@@ -394,20 +444,21 @@ function hydrateCarriedRoomContext(monthKey, monthData) {
   monthData.rooms = baseRooms.map((baseRoom) => {
     const currentRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
     const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
-    return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, state.roomRates);
+    return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, state.roomRates, state.roomTypeOverrides);
   });
   monthData.carriedContextFrom = previousKey;
 }
 
-function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates = defaultRoomRates) {
-  const baseRoomStatus = baseRoom.roomStatus || "Terisi";
+function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
+  const roomProfile = configuredRoomProfile(baseRoom, roomRates, roomTypeOverrides);
+  const baseRoomStatus = roomProfile.roomStatus || "Terisi";
   const room = {
-    ...baseRoom,
+    ...roomProfile,
     ...currentRoom,
-    type: baseRoom.type,
-    scheme: baseRoom.scheme,
-    rate: configuredRateForRoom(baseRoom, roomRates),
-    hasAc: baseRoom.hasAc,
+    type: roomProfile.type,
+    scheme: roomProfile.scheme,
+    rate: roomProfile.rate,
+    hasAc: roomProfile.hasAc,
     notes: [...(currentRoom.notes || [])]
   };
   const isGeneratedBlankRoom = !roomHasCarryContext(currentRoom, baseRoom) &&
@@ -422,17 +473,17 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates 
   if (!room.notes.length && previousRoom.notes?.length) {
     room.notes = [...previousRoom.notes];
   }
-  if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === baseRoom.paymentStatus)) {
+  if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === roomProfile.paymentStatus)) {
     room.paymentStatus = "Belum Bayar";
   }
 
   return room;
 }
 
-function createCarriedRoom(baseRoom, previousRoom, roomRates = defaultRoomRates) {
+function createCarriedRoom(baseRoom, previousRoom, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
+  const roomProfile = configuredRoomProfile(baseRoom, roomRates, roomTypeOverrides);
   return {
-    ...baseRoom,
-    rate: configuredRateForRoom(baseRoom, roomRates),
+    ...roomProfile,
     residentName: previousRoom.residentName || "",
     checkInDate: "",
     paymentDueDate: "",
@@ -459,7 +510,7 @@ function findPreviousMonthKey(monthKey) {
 
 function monthHasCarryContext(monthData) {
   return (monthData?.rooms || []).some((room) => {
-    const baseRoom = baseRooms.find((item) => item.id === room.id) || {};
+    const baseRoom = configuredRoomProfile(baseRooms.find((item) => item.id === room.id) || {}, state.roomRates, state.roomTypeOverrides);
     return roomHasCarryContext(room, baseRoom);
   });
 }
@@ -629,6 +680,7 @@ function pillTone(value) {
 
 function render() {
   renderRoomRateSettings();
+  renderRoomTypeSettings();
   renderSummary();
   renderPriorityDashboard();
   renderRoomBoard();
@@ -646,12 +698,44 @@ function renderRoomRateSettings() {
   });
 }
 
+function renderRoomTypeSettings() {
+  roomTypeSettingsList.innerHTML = editableRoomIds().map((roomId) => {
+    const room = activeMonthData().rooms.find((item) => item.id === roomId);
+    return `
+      <label>
+        Kamar ${roomId}
+        <small>${room?.type || state.roomTypeOverrides[roomId]}</small>
+        <select data-room-type="${roomId}">
+          ${editableRoomTypes.map((type) => `<option value="${type}" ${state.roomTypeOverrides[roomId] === type ? "selected" : ""}>${type}</option>`).join("")}
+        </select>
+      </label>
+    `;
+  }).join("");
+}
+
 function applyRoomRates() {
   Object.values(state.monthlyData || {}).forEach((monthData) => {
     monthData.rooms = (monthData.rooms || []).map((room) => ({
       ...room,
       rate: configuredRateForRoom(room, state.roomRates)
     }));
+  });
+}
+
+function applyRoomTypeOverrides() {
+  Object.values(state.monthlyData || {}).forEach((monthData) => {
+    monthData.rooms = (monthData.rooms || []).map((room) => {
+      const baseRoom = baseRooms.find((item) => item.id === room.id);
+      if (!baseRoom) return room;
+      const profile = configuredRoomProfile(baseRoom, state.roomRates, state.roomTypeOverrides);
+      return {
+        ...room,
+        type: profile.type,
+        scheme: profile.scheme,
+        rate: profile.rate,
+        hasAc: profile.hasAc
+      };
+    });
   });
 }
 
@@ -1303,6 +1387,20 @@ rateSettingsForm.addEventListener("submit", (event) => {
   state.roomRates = normalizeRoomRates(requestedRates);
   applyRoomRates();
   rateSettingsStatus.textContent = "Harga terbaru sudah disimpan dan berlaku untuk seluruh periode.";
+  render();
+});
+
+roomTypeSettingsForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (isViewMode) return;
+
+  const requestedTypes = {};
+  roomTypeSettingsForm.querySelectorAll("[data-room-type]").forEach((select) => {
+    requestedTypes[select.dataset.roomType] = select.value;
+  });
+  state.roomTypeOverrides = normalizeRoomTypeOverrides(requestedTypes);
+  applyRoomTypeOverrides();
+  roomTypeSettingsStatus.textContent = "Tipe kamar terbaru sudah disimpan dan berlaku untuk seluruh periode.";
   render();
 });
 

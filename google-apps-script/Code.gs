@@ -5,6 +5,7 @@ const BOOKINGS_SHEET_NAME = "Bookings";
 const DEBTS_SHEET_NAME = "Debts";
 const FACILITIES_SHEET_NAME = "Facilities";
 const RATES_SHEET_NAME = "Room Rates";
+const ROOM_TYPES_SHEET_NAME = "Room Types";
 
 function doGet(e) {
   const action = (e.parameter.action || "load").toLowerCase();
@@ -68,6 +69,7 @@ function syncReadableTabs_(state) {
   const facilityRows = [["Aktivitas", "Terakhir Selesai", "Jadwal Berikutnya", "Catatan", "Jumlah Penyelesaian", "ID"]];
   const acServiceRows = [["Kamar", "Terakhir Service", "Jadwal Berikutnya", "Selesai", "Catatan", "Jumlah Service", "ID"]];
   const rateRows = [["Tipe Kamar", "Tarif Aktif"]];
+  const roomTypeRows = [["Kamar", "Tipe Aktif"]];
 
   Object.keys(state.monthlyData || {}).sort().forEach((monthKey) => {
     const monthData = state.monthlyData[monthKey] || {};
@@ -154,6 +156,9 @@ function syncReadableTabs_(state) {
   Object.keys(state.roomRates || {}).forEach((roomType) => {
     rateRows.push([roomType, Number(state.roomRates[roomType] || 0)]);
   });
+  Object.keys(state.roomTypeOverrides || {}).forEach((roomId) => {
+    roomTypeRows.push([roomId, state.roomTypeOverrides[roomId] || ""]);
+  });
 
   writeRows_(ROOMS_SHEET_NAME, roomsRows);
   writeRows_(BOOKINGS_SHEET_NAME, bookingRows);
@@ -161,6 +166,7 @@ function syncReadableTabs_(state) {
   writeRows_(FACILITIES_SHEET_NAME, facilityRows);
   writeRows_("AC Service", acServiceRows);
   writeRows_(RATES_SHEET_NAME, rateRows);
+  writeRows_(ROOM_TYPES_SHEET_NAME, roomTypeRows);
 }
 
 function getPaymentDueDate_(room) {

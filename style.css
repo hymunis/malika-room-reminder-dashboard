@@ -222,11 +222,13 @@ h3 {
   margin-bottom: 18px;
 }
 
-.rate-settings {
+.rate-settings,
+.room-type-settings {
   margin-bottom: 18px;
 }
 
-.rate-settings summary {
+.rate-settings summary,
+.room-type-settings summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -235,34 +237,49 @@ h3 {
   list-style: none;
 }
 
-.rate-settings summary::-webkit-details-marker {
+.rate-settings summary::-webkit-details-marker,
+.room-type-settings summary::-webkit-details-marker {
   display: none;
 }
 
-.rate-settings summary p {
+.rate-settings summary p,
+.room-type-settings summary p {
   margin-bottom: 0;
   color: var(--muted);
   font-size: 0.88rem;
 }
 
-.rate-settings summary > span {
+.rate-settings summary > span,
+.room-type-settings summary > span {
   flex: 0 0 auto;
   color: var(--project);
   font-size: 0.78rem;
   font-weight: 900;
 }
 
-.rate-settings[open] summary {
+.rate-settings[open] summary,
+.room-type-settings[open] summary {
   margin-bottom: 16px;
 }
 
-.rate-settings-form {
+.rate-settings-form,
+.room-type-settings-form {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
-.rate-settings-form label {
+.rate-settings-form {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.room-type-settings-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px;
+}
+
+.rate-settings-form label,
+.room-type-settings-list label {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -270,12 +287,15 @@ h3 {
 }
 
 .rate-settings-form label small,
-.rate-settings-actions small {
+.rate-settings-actions small,
+.room-type-settings-list label small,
+.room-type-settings-actions small {
   color: var(--muted);
   font-weight: 700;
 }
 
-.rate-settings-actions {
+.rate-settings-actions,
+.room-type-settings-actions {
   display: flex;
   grid-column: 1 / -1;
   align-items: center;
@@ -1397,12 +1417,14 @@ textarea:focus {
 
   .debt-form,
   .booking-form,
-  .rate-settings-form {
+  .rate-settings-form,
+  .room-type-settings-list {
     grid-template-columns: 1fr 1fr;
   }
 
   .debt-form-actions,
-  .booking-form-actions {
+  .booking-form-actions,
+  .room-type-settings-actions {
     grid-column: 1 / -1;
   }
 }
@@ -1424,7 +1446,8 @@ textarea:focus {
     .facility-controls,
     .facility-view-grid,
     .ac-service-quick,
-    .rate-settings-form {
+    .rate-settings-form,
+    .room-type-settings-list {
     grid-template-columns: 1fr;
   }
 
@@ -1455,12 +1478,14 @@ textarea:focus {
   .booking-form-actions,
   .debt-form-actions,
   .rate-settings-actions,
+  .room-type-settings-actions,
   .note-row-actions,
   .history-actions {
     justify-content: flex-start;
   }
 
-  .rate-settings-actions {
+  .rate-settings-actions,
+  .room-type-settings-actions {
     align-items: flex-start;
     flex-direction: column;
   }

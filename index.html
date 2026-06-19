@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malika Room Reminder Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260603-facility-colors">
+  <link rel="stylesheet" href="style.css?v=20260619-room-type-customize">
 </head>
 <body>
   <div class="app-shell">
@@ -115,6 +115,23 @@
             <div class="rate-settings-actions">
               <small id="rateSettingsStatus">Tarif tersimpan bersama data dashboard.</small>
               <button class="primary-button" type="submit">Simpan Harga</button>
+            </div>
+          </form>
+        </details>
+
+        <details class="room-type-settings section-block" data-edit-only>
+          <summary>
+            <div>
+              <h2>Customize Tipe Kamar</h2>
+              <p>Ubah kamar Standard menjadi Plus Room, atau kembalikan lagi bila dibutuhkan.</p>
+            </div>
+            <span>Atur tipe</span>
+          </summary>
+          <form class="room-type-settings-form" id="roomTypeSettingsForm">
+            <div class="room-type-settings-list" id="roomTypeSettingsList"></div>
+            <div class="room-type-settings-actions">
+              <small id="roomTypeSettingsStatus">Default baru: A7 dan B8 menjadi Plus Room.</small>
+              <button class="primary-button" type="submit">Simpan Tipe Kamar</button>
             </div>
           </form>
         </details>
@@ -288,6 +305,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260603-payment-cicil"></script>
+  <script src="app.js?v=20260619-room-type-customize"></script>
 </body>
 </html>
