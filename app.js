@@ -21,20 +21,23 @@ const baseFacilityTasks = [
   { id: "clean-water-tank", title: "Cleaning Torn Air" },
   { id: "clean-fridge", title: "Cleaning Kulkas" },
   { id: "buy-water-gallons", title: "Pembelian Air Galon" },
-  { id: "buy-kitchen-gas", title: "Pembelian Gas Dapur" }
+  { id: "buy-kitchen-gas-3kg", title: "Pembelian Gas Dapur 3 Kg" },
+  { id: "buy-kitchen-gas-5kg", title: "Pembelian Gas Dapur 5 Kg" }
 ];
 const roomTypeGroups = [
   { type: "Standard", description: "Bulanan", tone: "standard" },
-  { type: "Plus Room", description: "Semesteran, 6 bulan", tone: "standard-plus" },
+  { type: "Plus Room", description: "Pilihan 6 bulan atau 3 bulan", tone: "standard-plus" },
   { type: "Eksklusif", description: "Tahunan, ber-AC", tone: "exclusive" },
   { type: "Deluxe", description: "Tahunan, ber-AC", tone: "deluxe" }
 ];
 const defaultRoomRates = {
   Standard: 800000,
-  "Plus Room": 6500000,
+  "Plus Room 6 Bulan": 6500000,
+  "Plus Room 3 Bulan": 0,
   Eksklusif: 15500000,
   Deluxe: 17500000
 };
+const plusRoomSchemeOptions = ["6 Bulan", "3 Bulan"];
 const editableRoomTypes = ["Standard", "Plus Room"];
 const defaultRoomTypeOverrides = {
   A7: "Plus Room",
@@ -42,7 +45,7 @@ const defaultRoomTypeOverrides = {
 };
 const roomTypeProfiles = {
   Standard: { scheme: "Bulanan", hasAc: false },
-  "Plus Room": { scheme: "Semesteran", hasAc: false },
+  "Plus Room": { scheme: "6 Bulan", hasAc: false },
   Eksklusif: { scheme: "Tahunan", hasAc: true },
   Deluxe: { scheme: "Tahunan", hasAc: true }
 };
@@ -58,8 +61,8 @@ const baseRooms = [
   { id: "B5", type: "Eksklusif", scheme: "Tahunan", rate: 15500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "B6", type: "Eksklusif", scheme: "Tahunan", rate: 15500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "B7", type: "Eksklusif", scheme: "Tahunan", rate: 15500000, hasAc: true, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A6", type: "Plus Room", scheme: "Semesteran", rate: 6500000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
-  { id: "A8", type: "Plus Room", scheme: "Semesteran", rate: 6500000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A6", type: "Plus Room", scheme: "6 Bulan", rate: 6500000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
+  { id: "A8", type: "Plus Room", scheme: "6 Bulan", rate: 6500000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "A2", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "A3", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
   { id: "A7", type: "Standard", scheme: "Bulanan", rate: 800000, hasAc: false, paymentStatus: "Lunas", roomStatus: "Terisi", residentName: "", checkInDate: "", checkOutDate: "" },
@@ -197,14 +200,35 @@ function normalizeStoredState(stored) {
 }
 
 function normalizeRoomRates(roomRates = {}) {
-  return Object.fromEntries(roomTypeGroups.map(({ type }) => {
-    const savedRate = Number(roomRates[type]);
-    return [type, savedRate > 0 ? savedRate : defaultRoomRates[type]];
+  return Object.fromEntries(Object.keys(defaultRoomRates).map((rateKey) => {
+    const hasSavedRate = Object.prototype.hasOwnProperty.call(roomRates, rateKey);
+    const legacyPlusRate = rateKey === "Plus Room 6 Bulan" ? Number(roomRates["Plus Room"]) : NaN;
+    const savedRate = hasSavedRate ? Number(roomRates[rateKey]) : legacyPlusRate;
+    return [rateKey, savedRate >= 0 ? savedRate : defaultRoomRates[rateKey]];
   }));
 }
 
+function normalizePlusRoomScheme(scheme) {
+  if (scheme === "Semesteran") return "6 Bulan";
+  return plusRoomSchemeOptions.includes(scheme) ? scheme : "6 Bulan";
+}
+
+function rateKeyForRoom(room) {
+  if (room?.type === "Plus Room") return `Plus Room ${normalizePlusRoomScheme(room.scheme)}`;
+  return room?.type || "Standard";
+}
+
 function configuredRateForRoom(room, roomRates = defaultRoomRates) {
-  return Number(roomRates[room.type]) || defaultRoomRates[room.type] || Number(room.rate || 0);
+  const rateKey = rateKeyForRoom(room);
+  const configuredRate = Number(roomRates[rateKey]);
+  if (configuredRate >= 0) return configuredRate;
+  return defaultRoomRates[rateKey] ?? Number(room.rate || 0);
+}
+
+function configuredSchemeForRoom(room, savedScheme = "") {
+  if (room?.type === "Plus Room") return normalizePlusRoomScheme(savedScheme || room.scheme);
+  const profile = roomTypeProfiles[room?.type] || roomTypeProfiles.Standard;
+  return profile.scheme;
 }
 
 function normalizeRoomTypeOverrides(overrides = {}) {
@@ -229,7 +253,7 @@ function configuredRoomProfile(baseRoom, roomRates = defaultRoomRates, roomTypeO
   const room = {
     ...baseRoom,
     type: effectiveType,
-    scheme: profile.scheme,
+    scheme: configuredSchemeForRoom({ ...baseRoom, type: effectiveType, scheme: profile.scheme }),
     hasAc: profile.hasAc
   };
   return {
@@ -240,7 +264,8 @@ function configuredRoomProfile(baseRoom, roomRates = defaultRoomRates, roomTypeO
 
 function normalizeFacilityTasks(tasks = []) {
   return baseFacilityTasks.map((baseTask) => {
-    const savedTask = tasks.find((task) => task.id === baseTask.id) || {};
+    const legacyGasTask = baseTask.id === "buy-kitchen-gas-3kg" ? tasks.find((task) => task.id === "buy-kitchen-gas") : null;
+    const savedTask = tasks.find((task) => task.id === baseTask.id) || legacyGasTask || {};
     return {
       ...baseTask,
       lastCompletedDate: savedTask.lastCompletedDate || "",
@@ -301,16 +326,22 @@ function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates, r
         bookingNote,
         ...roomData
       } = savedRoom;
+      const roomScheme = configuredSchemeForRoom(roomProfile, roomData.scheme);
+      const pricedRoomProfile = {
+        ...roomProfile,
+        scheme: roomScheme,
+        rate: configuredRateForRoom({ ...roomProfile, scheme: roomScheme }, roomRates)
+      };
 
       return {
-        ...roomProfile,
+        ...pricedRoomProfile,
         ...roomData,
-        type: roomProfile.type,
-        scheme: roomProfile.scheme,
-        rate: roomProfile.rate,
-        hasAc: roomProfile.hasAc,
-        paymentStatus: normalizeRoomPaymentStatus(roomData.paymentStatus || roomProfile.paymentStatus),
-        roomStatus: normalizeRoomStatus(roomData.roomStatus || roomProfile.roomStatus),
+        type: pricedRoomProfile.type,
+        scheme: pricedRoomProfile.scheme,
+        rate: pricedRoomProfile.rate,
+        hasAc: pricedRoomProfile.hasAc,
+        paymentStatus: normalizeRoomPaymentStatus(roomData.paymentStatus || pricedRoomProfile.paymentStatus),
+        roomStatus: normalizeRoomStatus(roomData.roomStatus || pricedRoomProfile.roomStatus),
         residentName: roomData.residentName || "",
         checkInDate: roomData.checkInDate || "",
         paymentDueDate: roomData.paymentDueDate || "",
@@ -435,8 +466,6 @@ function createCarriedMonthData(monthKey) {
 }
 
 function hydrateCarriedRoomContext(monthKey, monthData) {
-  if (monthData.carriedContextFrom) return;
-
   const previousKey = findPreviousCarryMonthKey(monthKey);
   if (!previousKey || !monthData) return;
 
@@ -452,18 +481,27 @@ function hydrateCarriedRoomContext(monthKey, monthData) {
 function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
   const roomProfile = configuredRoomProfile(baseRoom, roomRates, roomTypeOverrides);
   const baseRoomStatus = roomProfile.roomStatus || "Terisi";
-  const room = {
+  const isGeneratedBlankRoom = !roomHasCarryContext(currentRoom, roomProfile) &&
+    !currentRoom.checkInDate &&
+    !currentRoom.paymentDueDate &&
+    normalizeRoomPaymentStatus(currentRoom.paymentStatus || roomProfile.paymentStatus) === normalizeRoomPaymentStatus(roomProfile.paymentStatus);
+  const roomScheme = roomProfile.type === "Plus Room" && isGeneratedBlankRoom
+    ? configuredSchemeForRoom(roomProfile, previousRoom.scheme || currentRoom.scheme)
+    : configuredSchemeForRoom(roomProfile, currentRoom.scheme || previousRoom.scheme);
+  const pricedRoomProfile = {
     ...roomProfile,
+    scheme: roomScheme,
+    rate: configuredRateForRoom({ ...roomProfile, scheme: roomScheme }, roomRates)
+  };
+  const room = {
+    ...pricedRoomProfile,
     ...currentRoom,
-    type: roomProfile.type,
-    scheme: roomProfile.scheme,
-    rate: roomProfile.rate,
-    hasAc: roomProfile.hasAc,
+    type: pricedRoomProfile.type,
+    scheme: pricedRoomProfile.scheme,
+    rate: pricedRoomProfile.rate,
+    hasAc: pricedRoomProfile.hasAc,
     notes: [...(currentRoom.notes || [])]
   };
-  const isGeneratedBlankRoom = !roomHasCarryContext(currentRoom, baseRoom) &&
-    !currentRoom.checkInDate &&
-    !currentRoom.paymentDueDate;
 
   if (!room.residentName && previousRoom.residentName) room.residentName = previousRoom.residentName;
   if (!room.checkOutDate && previousRoom.checkOutDate) room.checkOutDate = previousRoom.checkOutDate;
@@ -473,7 +511,7 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates 
   if (!room.notes.length && previousRoom.notes?.length) {
     room.notes = [...previousRoom.notes];
   }
-  if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === roomProfile.paymentStatus)) {
+  if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === pricedRoomProfile.paymentStatus)) {
     room.paymentStatus = "Belum Bayar";
   }
 
@@ -482,14 +520,20 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates 
 
 function createCarriedRoom(baseRoom, previousRoom, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
   const roomProfile = configuredRoomProfile(baseRoom, roomRates, roomTypeOverrides);
-  return {
+  const roomScheme = configuredSchemeForRoom(roomProfile, previousRoom.scheme);
+  const pricedRoomProfile = {
     ...roomProfile,
+    scheme: roomScheme,
+    rate: configuredRateForRoom({ ...roomProfile, scheme: roomScheme }, roomRates)
+  };
+  return {
+    ...pricedRoomProfile,
     residentName: previousRoom.residentName || "",
     checkInDate: "",
     paymentDueDate: "",
     checkOutDate: previousRoom.checkOutDate || "",
     paymentStatus: "Belum Bayar",
-    roomStatus: previousRoom.roomStatus || baseRoom.roomStatus || "Terisi",
+    roomStatus: previousRoom.roomStatus || pricedRoomProfile.roomStatus || "Terisi",
     notes: [...(previousRoom.notes || [])]
   };
 }
@@ -517,10 +561,13 @@ function monthHasCarryContext(monthData) {
 
 function roomHasCarryContext(room, baseRoom) {
   const baseRoomStatus = baseRoom.roomStatus || "Terisi";
+  const baseScheme = configuredSchemeForRoom(baseRoom, baseRoom.scheme);
+  const roomScheme = configuredSchemeForRoom(baseRoom, room?.scheme);
   return Boolean(
     room?.residentName ||
     room?.checkOutDate ||
     (room?.notes || []).length ||
+    (room?.scheme && roomScheme !== baseScheme) ||
     (room?.roomStatus && room.roomStatus !== baseRoomStatus)
   );
 }
@@ -636,7 +683,19 @@ function formatCurrency(value) {
 }
 
 function rateLabel(room) {
-  return `${formatCurrency(room.rate)}/${room.scheme.toLowerCase().replace("an", "")}`;
+  const amount = Number(room.rate);
+  return `${amount > 0 ? formatCurrency(amount) : "Belum diset"}/${rateUnitLabel(room.scheme)}`;
+}
+
+function rateUnitLabel(scheme) {
+  const units = {
+    Bulanan: "bulan",
+    Tahunan: "tahun",
+    "6 Bulan": "6 bulan",
+    "3 Bulan": "3 bulan",
+    Semesteran: "6 bulan"
+  };
+  return units[scheme] || String(scheme || "").toLowerCase();
 }
 
 function schemeLabel(room) {
@@ -728,11 +787,13 @@ function applyRoomTypeOverrides() {
       const baseRoom = baseRooms.find((item) => item.id === room.id);
       if (!baseRoom) return room;
       const profile = configuredRoomProfile(baseRoom, state.roomRates, state.roomTypeOverrides);
+      const scheme = configuredSchemeForRoom(profile, room.type === profile.type ? room.scheme : "");
+      const rate = configuredRateForRoom({ ...profile, scheme }, state.roomRates);
       return {
         ...room,
         type: profile.type,
-        scheme: profile.scheme,
-        rate: profile.rate,
+        scheme,
+        rate,
         hasAc: profile.hasAc
       };
     });
@@ -871,6 +932,13 @@ function renderDetail() {
         Nama penghuni
         <input data-action="resident-name" value="${escapeHtml(room.residentName || "")}" placeholder="Contoh: Ibu Sari / Pak Budi">
       </label>
+
+      ${room.type === "Plus Room" ? `<label>
+        Pilihan sewa
+        <select data-action="rental-scheme">
+          ${plusRoomSchemeOptions.map((option) => `<option value="${option}" ${schemeLabel(room) === option ? "selected" : ""}>${option}</option>`).join("")}
+        </select>
+      </label>` : ""}
 
       <label>
         Tanggal Bayar
@@ -1060,7 +1128,8 @@ function facilityThemeClass(taskId) {
     "clean-water-tank": "facility-theme-water-tank",
     "clean-fridge": "facility-theme-fridge",
     "buy-water-gallons": "facility-theme-gallons",
-    "buy-kitchen-gas": "facility-theme-gas"
+    "buy-kitchen-gas-3kg": "facility-theme-gas",
+    "buy-kitchen-gas-5kg": "facility-theme-gas"
   };
   return themes[taskId] || "";
 }
@@ -1421,6 +1490,10 @@ detailPanel.addEventListener("change", (event) => {
   updateSelectedRoom((room) => {
     const updated = { ...room };
     if (action === "resident-name") updated.residentName = event.target.value.trim();
+    if (action === "rental-scheme") {
+      updated.scheme = normalizePlusRoomScheme(event.target.value);
+      updated.rate = configuredRateForRoom(updated, state.roomRates);
+    }
     if (action === "check-in-date") updated.checkInDate = event.target.value;
     if (action === "payment-due-date") updated.paymentDueDate = event.target.value;
     if (action === "check-out-date") updated.checkOutDate = event.target.value;

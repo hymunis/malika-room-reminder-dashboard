@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malika Room Reminder Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260619-room-type-customize">
+  <link rel="stylesheet" href="style.css?v=20260729-carry-and-plus-options">
 </head>
 <body>
   <div class="app-shell">
@@ -99,8 +99,13 @@
             </label>
             <label>
               Plus Room
-              <small>Semesteran, 6 bulan</small>
-              <input data-room-rate="Plus Room" type="number" min="1" step="1000" required>
+              <small>6 bulan</small>
+              <input data-room-rate="Plus Room 6 Bulan" type="number" min="0" step="1000" required>
+            </label>
+            <label>
+              Plus Room
+              <small>3 bulan</small>
+              <input data-room-rate="Plus Room 3 Bulan" type="number" min="0" step="1000" required>
             </label>
             <label>
               Eksklusif Room
@@ -305,6 +310,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260619-room-type-customize"></script>
+  <script src="app.js?v=20260729-carry-and-plus-options"></script>
 </body>
 </html>
