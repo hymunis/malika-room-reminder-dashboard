@@ -39,8 +39,21 @@
       </nav>
 
       <section class="tab-panel active" data-tab-panel="priorities">
+        <section class="section-block whatsapp-toolbar">
+          <div class="whatsapp-toolbar-text">
+            <h2>Kirim Ringkasan ke WhatsApp</h2>
+            <p>Rangkum semua item di Tugas Prioritas & Reminder jadi satu pesan, siap dikirim lewat WhatsApp.</p>
+          </div>
+          <div class="whatsapp-toolbar-controls">
+            <label>
+              Nomor WhatsApp tujuan
+              <input id="whatsappNumber" type="tel" inputmode="numeric" placeholder="Contoh: 6281234567890">
+            </label>
+            <button class="whatsapp-button" id="whatsappSendBtn" type="button">Kirim Ringkasan</button>
+          </div>
+        </section>
         <section class="priority-layout">
-          <section class="section-block priority-section">
+          <section class="section-block priority-section priority-section--payment">
             <div class="section-heading">
               <div>
                 <h2>Kamar Belum Bayar</h2>
@@ -50,7 +63,7 @@
             <div class="priority-list" id="paymentPriorityList"></div>
           </section>
 
-          <section class="section-block priority-section">
+          <section class="section-block priority-section priority-section--ac">
             <div class="section-heading">
               <div>
                 <h2>Jadwal Service AC</h2>
@@ -60,7 +73,7 @@
             <div class="priority-list" id="acPriorityList"></div>
           </section>
 
-          <section class="section-block priority-section">
+          <section class="section-block priority-section priority-section--vacancy">
             <div class="section-heading">
               <div>
                 <h2>Kamar Kosong / Renovasi</h2>
@@ -70,7 +83,7 @@
             <div class="priority-list" id="roomProjectPriorityList"></div>
           </section>
 
-          <section class="section-block priority-section">
+          <section class="section-block priority-section priority-section--facility">
             <div class="section-heading">
               <div>
                 <h2>Informasi Luar Kamar</h2>
