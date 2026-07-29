@@ -3,19 +3,21 @@
   --surface: #ffffff;
   --surface-soft: #eef5ff;
   --text: #17202a;
-  --muted: #637083;
-  --line: #d7e3f3;
-  --safe: #2e9f61;
-  --safe-bg: #e8f7ee;
-  --warning: #c99118;
-  --warning-bg: #fff5d9;
-  --danger: #d94a3a;
-  --danger-bg: #ffe7e3;
-  --project: #2f75d6;
-  --project-bg: #e8f1ff;
-  --empty: #7c8795;
-  --empty-bg: #edf0f4;
-  --ink: #243447;
+  --muted: #4c5768;
+  --line: #c3d3ea;
+  --safe: #1c8a4d;
+  --safe-bg: #cdf0dc;
+  --warning: #a86a05;
+  --warning-bg: #ffe3a3;
+  --danger: #c22f20;
+  --danger-bg: #ffcfc4;
+  --project: #1d5bc4;
+  --project-bg: #cfe1ff;
+  --empty: #545f70;
+  --empty-bg: #dde3ea;
+  --booking: #7a3fc4;
+  --booking-bg: #ead6ff;
+  --ink: #16233a;
   --shadow: 0 18px 45px rgba(23, 45, 86, 0.11);
 }
 
@@ -317,20 +319,23 @@ h3 {
 
 .tab-button {
   min-height: 42px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 6px;
-  background: transparent;
+  background: rgba(76, 87, 104, 0.06);
   color: var(--muted);
   padding: 0 16px;
   font-weight: 900;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .tab-button:hover {
+  border-color: var(--line);
   background: var(--surface-soft);
   color: var(--ink);
 }
 
 .tab-button.active {
+  border-color: var(--ink);
   background: var(--ink);
   color: #fff;
 }
@@ -343,6 +348,67 @@ h3 {
   display: block;
 }
 
+.whatsapp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  border-left: 4px solid #25d366;
+}
+
+.whatsapp-toolbar-text h2 {
+  margin-bottom: 2px;
+}
+
+.whatsapp-toolbar-text p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.whatsapp-toolbar-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.whatsapp-toolbar-controls label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.whatsapp-toolbar-controls input {
+  min-height: 40px;
+  min-width: 210px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.whatsapp-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 6px;
+  background: #25d366;
+  color: #08381f;
+  font-weight: 900;
+}
+
+.whatsapp-button:hover {
+  background: #1fbf5a;
+}
+
 .priority-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -351,6 +417,23 @@ h3 {
 
 .priority-section {
   min-width: 0;
+  border-top: 4px solid var(--line);
+}
+
+.priority-section--payment {
+  border-top-color: var(--danger);
+}
+
+.priority-section--ac {
+  border-top-color: var(--project);
+}
+
+.priority-section--vacancy {
+  border-top-color: var(--warning);
+}
+
+.priority-section--facility {
+  border-top-color: var(--booking);
 }
 
 .priority-list {
@@ -365,9 +448,29 @@ h3 {
   gap: 10px;
   padding: 11px;
   border: 1px solid var(--line);
-  border-left: 4px solid var(--warning);
+  border-left: 5px solid var(--warning);
   border-radius: 8px;
   background: #fff;
+}
+
+.priority-item.danger {
+  border-left-color: var(--danger);
+  background: linear-gradient(90deg, var(--danger-bg), #fff 26%);
+}
+
+.priority-item.warning {
+  border-left-color: var(--warning);
+  background: linear-gradient(90deg, var(--warning-bg), #fff 26%);
+}
+
+.priority-item.project {
+  border-left-color: var(--project);
+  background: linear-gradient(90deg, var(--project-bg), #fff 26%);
+}
+
+.priority-item.safe {
+  border-left-color: var(--safe);
+  background: linear-gradient(90deg, var(--safe-bg), #fff 26%);
 }
 
 .priority-item strong,
@@ -594,27 +697,27 @@ h3 {
 
 .room-card.safe {
   border-left-color: var(--safe);
-  background: linear-gradient(180deg, #fff, var(--safe-bg));
+  background: linear-gradient(165deg, #fff 32%, var(--safe-bg));
 }
 
 .room-card.warning {
   border-left-color: var(--warning);
-  background: linear-gradient(180deg, #fff, var(--warning-bg));
+  background: linear-gradient(165deg, #fff 32%, var(--warning-bg));
 }
 
 .room-card.danger {
   border-left-color: var(--danger);
-  background: linear-gradient(180deg, #fff, var(--danger-bg));
+  background: linear-gradient(165deg, #fff 32%, var(--danger-bg));
 }
 
 .room-card.project {
   border-left-color: var(--project);
-  background: linear-gradient(180deg, #fff, var(--project-bg));
+  background: linear-gradient(165deg, #fff 32%, var(--project-bg));
 }
 
 .room-card.empty {
   border-left-color: var(--empty);
-  background: linear-gradient(180deg, #fff, var(--empty-bg));
+  background: linear-gradient(165deg, #fff 32%, var(--empty-bg));
 }
 
 .room-topline {
