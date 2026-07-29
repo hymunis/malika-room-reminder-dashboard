@@ -113,6 +113,8 @@ const roomTypeSettingsForm = document.querySelector("#roomTypeSettingsForm");
 const roomTypeSettingsList = document.querySelector("#roomTypeSettingsList");
 const roomTypeSettingsStatus = document.querySelector("#roomTypeSettingsStatus");
 const accessModeBadge = document.querySelector("#accessModeBadge");
+const whatsappNumberInput = document.querySelector("#whatsappNumber");
+const whatsappSendBtn = document.querySelector("#whatsappSendBtn");
 
 accessModeBadge.textContent = isViewMode ? "Mode Viewing · Hanya lihat" : "Mode Editing";
 accessModeBadge.classList.toggle("viewing", isViewMode);
@@ -129,6 +131,7 @@ acServiceRoomFilter.innerHTML = [
   ...acRoomIds.map((roomId) => `<option value="${roomId}">${roomId}</option>`)
 ].join("");
 bookingPlannedCheckIn.value = defaultExpenseDate();
+whatsappNumberInput.value = state.whatsappNumber || "";
 
 function loadState() {
   try {
@@ -151,7 +154,8 @@ function normalizeStoredState(stored) {
     acServiceTasks: normalizeAcServiceTasks([]),
     selectedMonth: defaultMonthKey,
     selectedYear: currentYear,
-    selectedRoomId: "A4"
+    selectedRoomId: "A4",
+    whatsappNumber: ""
   };
 
   if (!stored) return fallback;
@@ -174,7 +178,8 @@ function normalizeStoredState(stored) {
       acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: stored.selectedMonth || defaultMonthKey,
       selectedYear: stored.selectedYear || getYearFromMonthKey(stored.selectedMonth || defaultMonthKey),
-      selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
+      selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId,
+      whatsappNumber: stored.whatsappNumber || ""
     };
   }
 
@@ -192,7 +197,8 @@ function normalizeStoredState(stored) {
       acServiceTasks: normalizeAcServiceTasks(stored.acServiceTasks),
       selectedMonth: defaultMonthKey,
       selectedYear: currentYear,
-      selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId
+      selectedRoomId: stored.selectedRoomId || fallback.selectedRoomId,
+      whatsappNumber: stored.whatsappNumber || ""
     };
   }
 
@@ -505,7 +511,7 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates 
 
   if (!room.residentName && previousRoom.residentName) room.residentName = previousRoom.residentName;
   if (!room.checkOutDate && previousRoom.checkOutDate) room.checkOutDate = previousRoom.checkOutDate;
-  if ((room.roomStatus || baseRoomStatus) === baseRoomStatus && previousRoom.roomStatus) {
+  if (isGeneratedBlankRoom && !currentRoom.roomStatus && previousRoom.roomStatus) {
     room.roomStatus = previousRoom.roomStatus;
   }
   if (!room.notes.length && previousRoom.notes?.length) {
@@ -1010,7 +1016,7 @@ function renderPriorityDashboard() {
   acPriorityList.innerHTML = acTasks.length ? acTasks.map((task) => {
     const status = getAcServiceTaskStatus(task);
     return `
-      <article class="priority-item">
+      <article class="priority-item ${status.tone}">
         <div>
           <strong>AC kamar ${task.roomId}</strong>
           <small>${status.detail}</small>
@@ -1027,7 +1033,7 @@ function renderPriorityDashboard() {
   facilityPriorityList.innerHTML = facilityTasks.length ? facilityTasks.map((task) => {
     const status = getFacilityTaskStatus(task);
     return `
-      <article class="priority-item">
+      <article class="priority-item ${status.tone}">
         <div>
           <strong>${escapeHtml(task.title)}</strong>
           <small>${status.detail}</small>
@@ -1038,9 +1044,67 @@ function renderPriorityDashboard() {
   }).join("") : `<div class="empty-state">Tidak ada jadwal luar kamar yang perlu ditindaklanjuti.</div>`;
 }
 
+function buildPriorityWhatsAppMessage() {
+  const rooms = activeMonthData().rooms;
+  const paymentRooms = rooms.filter((room) => paymentFollowUpStatuses.includes(room.paymentStatus));
+  const projectRooms = rooms.filter((room) => ["Kosong", "Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus));
+  const facilityTasks = state.facilityTasks.filter((task) => getFacilityTaskStatus(task).tone !== "safe");
+  const acTasks = state.acServiceTasks.filter((task) => getAcServiceTaskStatus(task).tone !== "safe");
+
+  const lines = [];
+  lines.push(`*Ringkasan Tugas Prioritas & Reminder*`);
+  lines.push(`Kost Malika · ${selectedMonthName()}`);
+  lines.push("");
+
+  lines.push(`*Kamar Belum Bayar (${paymentRooms.length})*`);
+  if (paymentRooms.length) {
+    paymentRooms.forEach((room) => {
+      const due = room.paymentDueDate ? `Tanggal bayar ${formatDate(room.paymentDueDate)}` : "Tanggal bayar belum diisi";
+      lines.push(`• ${room.id} · ${room.residentName || "Belum ada penghuni"} — ${room.paymentStatus} (${due})`);
+    });
+  } else {
+    lines.push("• Tidak ada item yang perlu ditindaklanjuti.");
+  }
+  lines.push("");
+
+  lines.push(`*Jadwal Service AC (${acTasks.length})*`);
+  if (acTasks.length) {
+    acTasks.forEach((task) => {
+      const status = getAcServiceTaskStatus(task);
+      lines.push(`• AC kamar ${task.roomId} — ${status.label} (${status.detail})`);
+    });
+  } else {
+    lines.push("• Tidak ada jadwal service AC yang perlu ditindaklanjuti.");
+  }
+  lines.push("");
+
+  lines.push(`*Kamar Kosong / Renovasi (${projectRooms.length})*`);
+  if (projectRooms.length) {
+    projectRooms.forEach((room) => {
+      const detail = room.checkOutDate ? `Check-out ${formatDate(room.checkOutDate)}` : "Pantau progres dan target kesiapan kamar";
+      lines.push(`• ${room.id} · ${room.residentName || "Belum ada penghuni"} — ${room.roomStatus} (${detail})`);
+    });
+  } else {
+    lines.push("• Tidak ada kamar kosong/renovasi yang perlu dipantau.");
+  }
+  lines.push("");
+
+  lines.push(`*Informasi Luar Kamar (${facilityTasks.length})*`);
+  if (facilityTasks.length) {
+    facilityTasks.forEach((task) => {
+      const status = getFacilityTaskStatus(task);
+      lines.push(`• ${task.title} — ${status.label} (${status.detail})`);
+    });
+  } else {
+    lines.push("• Tidak ada jadwal luar kamar yang perlu ditindaklanjuti.");
+  }
+
+  return lines.join("\n");
+}
+
 function renderRoomPriorityItems(rooms, statusText, detailText) {
   return rooms.length ? rooms.map((room) => `
-    <article class="priority-item">
+    <article class="priority-item ${pillTone(statusText(room))}">
       <div>
         <strong>${room.id} · ${escapeHtml(room.residentName || "Belum ada penghuni")}</strong>
         <small>${detailText(room)}</small>
@@ -1833,6 +1897,30 @@ resetDataBtn.addEventListener("click", () => {
   resetBookingForm();
   resetDebtForm();
   render();
+});
+
+whatsappNumberInput.addEventListener("change", () => {
+  state.whatsappNumber = whatsappNumberInput.value.trim();
+  saveState();
+});
+
+whatsappSendBtn.addEventListener("click", () => {
+  const rawNumber = whatsappNumberInput.value.trim();
+  const digitsOnly = rawNumber.replace(/[^0-9]/g, "");
+  const normalizedNumber = digitsOnly.startsWith("0") ? `62${digitsOnly.slice(1)}` : digitsOnly;
+
+  if (!normalizedNumber) {
+    window.alert("Isi nomor WhatsApp tujuan terlebih dahulu (contoh: 6281234567890).");
+    whatsappNumberInput.focus();
+    return;
+  }
+
+  state.whatsappNumber = rawNumber;
+  saveState();
+
+  const message = buildPriorityWhatsAppMessage();
+  const waUrl = `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(message)}`;
+  window.open(waUrl, "_blank", "noopener");
 });
 
 render();
