@@ -34,7 +34,7 @@
         <button class="tab-button active" type="button" data-tab-target="priorities">Tugas Prioritas & Reminder</button>
         <button class="tab-button" type="button" data-tab-target="rooms">Informasi Kamar</button>
         <button class="tab-button" type="button" data-tab-target="facilities">Informasi Luar Kamar</button>
-        <button class="tab-button" type="button" data-tab-target="bookings">Early Booking & DP</button>
+        <button class="tab-button" type="button" data-tab-target="bookings">Daftar DP & Cicilan</button>
         <button class="tab-button" type="button" data-tab-target="debts">Pencatatan Hutang</button>
       </nav>
 
@@ -216,8 +216,8 @@
         <section class="section-block booking-section">
           <div class="section-heading">
             <div>
-              <h2>Early Booking Notes</h2>
-              <p>Catat calon penghuni yang booking atau sudah DP sebelum kamar tersedia.</p>
+              <h2>Daftar DP & Cicilan</h2>
+              <p>Catat calon penghuni yang booking atau sudah DP sebelum kamar tersedia. Data akan otomatis dibawa ke bulan-bulan berikutnya.</p>
             </div>
           </div>
           <form class="booking-form" id="bookingForm" data-edit-only>
@@ -237,28 +237,28 @@
               </select>
             </label>
             <label>
-              DP
+              Bayar ke-1
               <input id="bookingDpAmount" type="number" min="0" step="1000" placeholder="0">
             </label>
             <label class="checkbox-field">
               <input id="bookingDpPaid" type="checkbox">
-              DP sudah dibayar
+              Bayar ke-1 sudah dibayar
             </label>
             <label>
-              Payment 1
+              Bayar ke-2
               <input id="bookingPayment1Amount" type="number" min="0" step="1000" placeholder="0">
             </label>
             <label class="checkbox-field">
               <input id="bookingPayment1Paid" type="checkbox">
-              Payment 1 sudah dibayar
+              Bayar ke-2 sudah dibayar
             </label>
             <label>
-              Payment 2
+              Bayar ke-3
               <input id="bookingPayment2Amount" type="number" min="0" step="1000" placeholder="0">
             </label>
             <label class="checkbox-field">
               <input id="bookingPayment2Paid" type="checkbox">
-              Payment 2 sudah dibayar
+              Bayar ke-3 sudah dibayar
             </label>
             <label>
               Rencana check-in
