@@ -464,7 +464,7 @@ function createCarriedMonthData(monthKey) {
   return {
     rooms: baseRooms.map((baseRoom) => {
       const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
-      return createCarriedRoom(baseRoom, previousRoom, state.roomRates, state.roomTypeOverrides);
+      return createCarriedRoom(baseRoom, previousRoom, monthKey, state.roomRates, state.roomTypeOverrides);
     }),
     bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
     expenses: [],
@@ -481,23 +481,29 @@ function hydrateCarriedRoomContext(monthKey, monthData) {
   monthData.rooms = baseRooms.map((baseRoom) => {
     const currentRoom = (monthData.rooms || []).find((room) => room.id === baseRoom.id) || {};
     const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
-    return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, state.roomRates, state.roomTypeOverrides);
+    return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, monthKey, state.roomRates, state.roomTypeOverrides);
   });
   monthData.carriedContextFrom = previousKey;
 }
 
-function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
+function transposePaymentDueDate(previousDueDate, currentMonthKey) {
+  if (!previousDueDate || !currentMonthKey) return previousDueDate || "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(previousDueDate);
+  if (!match) return previousDueDate;
+  const [, , , day] = match;
+  return `${currentMonthKey}-${day}`;
+}
+
+function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, currentMonthKey, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
   const roomProfile = configuredRoomProfile(baseRoom, roomRates, roomTypeOverrides);
-  const baseRoomStatus = roomProfile.roomStatus || "Terisi";
   const isGeneratedBlankRoom = !roomHasCarryContext(currentRoom, roomProfile) &&
     !currentRoom.checkInDate &&
     !currentRoom.paymentDueDate &&
     normalizeRoomPaymentStatus(currentRoom.paymentStatus || roomProfile.paymentStatus) === normalizeRoomPaymentStatus(roomProfile.paymentStatus);
   const editedFields = new Set(Array.isArray(currentRoom._userEditedFields) ? currentRoom._userEditedFields : []);
-  const hasEditTracking = Array.isArray(currentRoom._userEditedFields);
-  const canRefresh = (field) => hasEditTracking && !editedFields.has(field);
+  const canRefresh = (field) => !editedFields.has(field);
 
-  const roomScheme = roomProfile.type === "Plus Room" && (isGeneratedBlankRoom || canRefresh("scheme"))
+  const roomScheme = roomProfile.type === "Plus Room" && canRefresh("scheme")
     ? configuredSchemeForRoom(roomProfile, previousRoom.scheme || currentRoom.scheme)
     : configuredSchemeForRoom(roomProfile, currentRoom.scheme || previousRoom.scheme);
   const pricedRoomProfile = {
@@ -514,46 +520,42 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates 
     hasAc: pricedRoomProfile.hasAc,
     notes: [...(currentRoom.notes || [])]
   };
-  if (hasEditTracking) {
-    room._userEditedFields = [...editedFields];
-  }
+  room._userEditedFields = [...editedFields];
 
   if (canRefresh("residentName") && previousRoom.residentName !== undefined) {
-    room.residentName = previousRoom.residentName;
-  } else if (!room.residentName && previousRoom.residentName) {
-    room.residentName = previousRoom.residentName;
+    room.residentName = previousRoom.residentName || "";
   }
 
   if (canRefresh("checkInDate") && previousRoom.checkInDate !== undefined) {
-    room.checkInDate = previousRoom.checkInDate;
+    room.checkInDate = previousRoom.checkInDate || "";
   }
 
   if (canRefresh("checkOutDate") && previousRoom.checkOutDate !== undefined) {
-    room.checkOutDate = previousRoom.checkOutDate;
-  } else if (!room.checkOutDate && previousRoom.checkOutDate) {
-    room.checkOutDate = previousRoom.checkOutDate;
+    room.checkOutDate = previousRoom.checkOutDate || "";
   }
 
   if (canRefresh("roomStatus") && previousRoom.roomStatus) {
     room.roomStatus = previousRoom.roomStatus;
-  } else if (isGeneratedBlankRoom && !currentRoom.roomStatus && previousRoom.roomStatus) {
-    room.roomStatus = previousRoom.roomStatus;
+  }
+
+  if (canRefresh("paymentDueDate") && previousRoom.paymentDueDate) {
+    room.paymentDueDate = transposePaymentDueDate(previousRoom.paymentDueDate, currentMonthKey);
+  }
+
+  if (canRefresh("paymentStatus") && previousRoom.paymentStatus) {
+    room.paymentStatus = normalizeRoomPaymentStatus(previousRoom.paymentStatus);
+  } else if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === pricedRoomProfile.paymentStatus)) {
+    room.paymentStatus = "Belum Bayar";
   }
 
   if (canRefresh("notes") && Array.isArray(previousRoom.notes)) {
     room.notes = [...previousRoom.notes];
-  } else if (!room.notes.length && previousRoom.notes?.length) {
-    room.notes = [...previousRoom.notes];
-  }
-
-  if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === pricedRoomProfile.paymentStatus)) {
-    room.paymentStatus = "Belum Bayar";
   }
 
   return room;
 }
 
-function createCarriedRoom(baseRoom, previousRoom, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
+function createCarriedRoom(baseRoom, previousRoom, currentMonthKey, roomRates = defaultRoomRates, roomTypeOverrides = {}) {
   const roomProfile = configuredRoomProfile(baseRoom, roomRates, roomTypeOverrides);
   const roomScheme = configuredSchemeForRoom(roomProfile, previousRoom.scheme);
   const pricedRoomProfile = {
@@ -564,10 +566,10 @@ function createCarriedRoom(baseRoom, previousRoom, roomRates = defaultRoomRates,
   return {
     ...pricedRoomProfile,
     residentName: previousRoom.residentName || "",
-    checkInDate: "",
-    paymentDueDate: "",
+    checkInDate: previousRoom.checkInDate || "",
+    paymentDueDate: transposePaymentDueDate(previousRoom.paymentDueDate, currentMonthKey),
     checkOutDate: previousRoom.checkOutDate || "",
-    paymentStatus: "Belum Bayar",
+    paymentStatus: previousRoom.paymentStatus ? normalizeRoomPaymentStatus(previousRoom.paymentStatus) : "Belum Bayar",
     roomStatus: previousRoom.roomStatus || pricedRoomProfile.roomStatus || "Terisi",
     notes: [...(previousRoom.notes || [])]
   };
@@ -1640,7 +1642,9 @@ detailPanel.addEventListener("click", (event) => {
       return;
     }
     const confirmed = window.confirm(
-      `Ambil ulang data penghuni, status kamar, check-out, dan catatan kamar ${selectedRoomId} dari bulan sebelumnya?\n\nCatatan pembayaran dan tanggal bayar bulan ini tidak akan berubah.`
+      `Ambil ulang data kamar ${selectedRoomId} dari bulan sebelumnya?\n\n` +
+      `Yang akan disegarkan: penghuni, tanggal check-in / check-out, status kamar, tanggal bayar, status pembayaran, dan catatan.\n` +
+      `Tanggal bayar akan otomatis pindah ke bulan ini (misal tanggal 5 → tetap tanggal 5 bulan ini).`
     );
     if (!confirmed) return;
 
@@ -1648,7 +1652,7 @@ detailPanel.addEventListener("click", (event) => {
     monthData.rooms = monthData.rooms.map((room) => {
       if (room.id !== selectedRoomId) return room;
       const editedFields = new Set(Array.isArray(room._userEditedFields) ? room._userEditedFields : []);
-      ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "notes"].forEach((field) => editedFields.delete(field));
+      ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "paymentDueDate", "paymentStatus", "notes"].forEach((field) => editedFields.delete(field));
       return { ...room, _userEditedFields: [...editedFields] };
     });
     render();
