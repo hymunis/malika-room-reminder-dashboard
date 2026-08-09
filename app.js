@@ -116,6 +116,7 @@ const roomTypeSettingsStatus = document.querySelector("#roomTypeSettingsStatus")
 const accessModeBadge = document.querySelector("#accessModeBadge");
 const whatsappNumberInput = document.querySelector("#whatsappNumber");
 const whatsappSendBtn = document.querySelector("#whatsappSendBtn");
+const resyncAllRoomsBtn = document.querySelector("#resyncAllRoomsBtn");
 
 accessModeBadge.textContent = isViewMode ? "Mode Viewing · Hanya lihat" : "Mode Editing";
 accessModeBadge.classList.toggle("viewing", isViewMode);
@@ -586,11 +587,55 @@ function createCarriedRoom(baseRoom, previousRoom, currentMonthKey, roomRates = 
   };
 }
 
+function getCalendarNextMonthKey(monthKey) {
+  if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) return "";
+  const year = Number(monthKey.slice(0, 4));
+  const month = Number(monthKey.slice(5, 7));
+  if (month === 12) {
+    const nextYear = year + 1;
+    if (nextYear > lastTrackingYear) return "";
+    return `${nextYear}-01`;
+  }
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+function ensureMonthChainUpTo(targetKey) {
+  if (!targetKey || state.monthlyData[targetKey]) return;
+  const existingKeys = Object.keys(state.monthlyData).sort();
+  const earliestExisting = existingKeys[0];
+  if (!earliestExisting) return;
+  if (targetKey < earliestExisting) return;
+
+  let cursor = earliestExisting;
+  const MAX_STEPS = 600;
+  let steps = 0;
+  while (cursor < targetKey && steps < MAX_STEPS) {
+    const next = getCalendarNextMonthKey(cursor);
+    if (!next) break;
+    if (!state.monthlyData[next]) {
+      const previousData = state.monthlyData[cursor];
+      state.monthlyData[next] = {
+        rooms: baseRooms.map((baseRoom) => {
+          const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
+          return createCarriedRoom(baseRoom, previousRoom, next, state.roomRates, state.roomTypeOverrides);
+        }),
+        bookings: (previousData.bookings || []).map((booking) => ({ ...booking })),
+        expenses: [],
+        debts: [],
+        deletedBookingIds: [],
+        carriedContextFrom: cursor
+      };
+    }
+    cursor = next;
+    steps += 1;
+  }
+}
+
 function findPreviousCarryMonthKey(monthKey) {
   const calendarPrev = getCalendarPreviousMonthKey(monthKey);
-  if (calendarPrev && state.monthlyData?.[calendarPrev]) {
-    return calendarPrev;
-  }
+  if (!calendarPrev) return "";
+  ensureMonthChainUpTo(calendarPrev);
+  if (state.monthlyData?.[calendarPrev]) return calendarPrev;
   return Object.keys(state.monthlyData || {})
     .filter((key) => key < monthKey && monthHasCarryContext(state.monthlyData[key]))
     .sort()
@@ -1648,8 +1693,13 @@ detailPanel.addEventListener("click", (event) => {
   if (event.target.id === "resyncRoomBtn") {
     const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
     const prevKey = getCalendarPreviousMonthKey(monthKey);
-    if (!prevKey || !state.monthlyData[prevKey]) {
-      window.alert("Belum ada data bulan sebelumnya untuk kamar ini.");
+    if (!prevKey) {
+      window.alert("Bulan ini adalah awal periode tracking — tidak ada bulan sebelumnya untuk diacu.");
+      return;
+    }
+    ensureMonthChainUpTo(prevKey);
+    if (!state.monthlyData[prevKey]) {
+      window.alert("Belum ada data apa pun sebelum bulan ini untuk digunakan sebagai referensi.");
       return;
     }
     const confirmed = window.confirm(
@@ -1666,6 +1716,7 @@ detailPanel.addEventListener("click", (event) => {
       ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "paymentDueDate", "paymentStatus", "notes"].forEach((field) => editedFields.delete(field));
       return { ...room, _userEditedFields: [...editedFields] };
     });
+    saveState();
     render();
     return;
   }
@@ -2037,6 +2088,36 @@ whatsappSendBtn.addEventListener("click", () => {
   const waUrl = `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(message)}`;
   window.open(waUrl, "_blank", "noopener");
 });
+
+if (resyncAllRoomsBtn) {
+  resyncAllRoomsBtn.addEventListener("click", () => {
+    if (isViewMode) return;
+    const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
+    const prevKey = getCalendarPreviousMonthKey(monthKey);
+    if (!prevKey) {
+      window.alert("Bulan ini adalah awal periode tracking — tidak ada bulan sebelumnya untuk diacu.");
+      return;
+    }
+    ensureMonthChainUpTo(prevKey);
+    if (!state.monthlyData[prevKey]) {
+      window.alert("Belum ada data apa pun sebelum bulan ini untuk digunakan sebagai referensi.");
+      return;
+    }
+    const confirmed = window.confirm(
+      "Ambil ulang SEMUA data kamar di bulan ini dari bulan sebelumnya?\n\n" +
+      "Yang akan disegarkan: penghuni, tanggal check-in/out, status kamar, tanggal bayar, status pembayaran, dan catatan untuk seluruh 17 kamar.\n" +
+      "Tanggal bayar akan otomatis pindah ke bulan ini (misal tanggal 5 → tetap tanggal 5 bulan ini).\n\n" +
+      "Perubahan manual yang sudah Anda lakukan di bulan ini akan tertimpa."
+    );
+    if (!confirmed) return;
+
+    const monthData = activeMonthData();
+    monthData.rooms = monthData.rooms.map((room) => ({ ...room, _userEditedFields: [] }));
+    saveState();
+    render();
+    window.alert("Semua kamar berhasil disinkron ulang dari bulan sebelumnya.");
+  });
+}
 
 render();
 loadRemoteState();
