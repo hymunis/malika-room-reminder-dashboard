@@ -824,6 +824,16 @@ h3 {
   margin-bottom: 14px;
 }
 
+.detail-sync-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px 0 12px;
+}
+
+.detail-sync-row .ghost-button {
+  font-size: 0.78rem;
+}
+
 .detail-room {
   font-size: 2.1rem;
   font-weight: 900;
