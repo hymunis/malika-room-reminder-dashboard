@@ -355,6 +355,7 @@ function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates, r
         checkInDate: roomData.checkInDate || "",
         paymentDueDate: roomData.paymentDueDate || "",
         checkOutDate: roomData.checkOutDate || "",
+        extensionStatus: roomData.extensionStatus || "",
         notes: roomData.notes || []
       };
     }),
@@ -564,6 +565,10 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, currentMon
     room.notes = [...previousRoom.notes];
   }
 
+  if (canRefresh("extensionStatus") && previousRoom.extensionStatus !== undefined) {
+    room.extensionStatus = previousRoom.extensionStatus || "";
+  }
+
   return room;
 }
 
@@ -583,6 +588,7 @@ function createCarriedRoom(baseRoom, previousRoom, currentMonthKey, roomRates = 
     checkOutDate: previousRoom.checkOutDate || "",
     paymentStatus: previousRoom.paymentStatus ? normalizeRoomPaymentStatus(previousRoom.paymentStatus) : "Belum Bayar",
     roomStatus: previousRoom.roomStatus || pricedRoomProfile.roomStatus || "Terisi",
+    extensionStatus: previousRoom.extensionStatus || "",
     notes: [...(previousRoom.notes || [])]
   };
 }
@@ -913,14 +919,13 @@ function renderSummary() {
   const rooms = activeMonthData().rooms;
   const paymentFollowUp = rooms.filter((room) => paymentFollowUpStatuses.includes(room.paymentStatus)).length;
   const projects = rooms.filter((room) => ["Renovasi/Upgrade", "Maintenance"].includes(room.roomStatus)).length;
-  const unpaidDebts = currentOutstandingDebts();
-  const unpaidDebtTotal = unpaidDebts.reduce((total, debt) => total + Number(debt.amount), 0);
+  const availableSoonRooms = rooms.filter((room) => room.extensionStatus === "Stop");
 
   const cards = [
     { label: "Total kamar", value: rooms.length, hint: `Periode ${selectedMonthName()}` },
     { label: "Pembayaran perlu follow-up", value: paymentFollowUp, hint: "Belum bayar, cicil, telat, dispensasi" },
     { label: "Kamar renovasi/upgrade", value: projects, hint: "Termasuk maintenance" },
-    { label: "Hutang belum lunas", value: formatCurrency(unpaidDebtTotal), hint: `${unpaidDebts.length} transaksi perlu ditutup` }
+    { label: "Room akan Available", value: availableSoonRooms.length, hint: availableSoonRooms.length ? availableSoonRooms.map((room) => room.id).join(", ") : "Belum ada penghuni yang stop" }
   ];
 
   summaryGrid.innerHTML = cards.map((card) => `
@@ -1038,6 +1043,10 @@ function renderDetail() {
         <span>Status kamar</span>
         <strong>${room.roomStatus}</strong>
       </div>
+      <div class="info-tile">
+        <span>Informasi Perpanjang</span>
+        <strong>${room.extensionStatus || "Belum ditentukan"}</strong>
+      </div>
     </div>
 
     ${isViewMode ? "" : `<div class="control-grid">
@@ -1079,6 +1088,15 @@ function renderDetail() {
         Ubah status kamar
         <select data-action="room-status">
           ${roomStatusOptions.map((option) => `<option value="${option}" ${room.roomStatus === option ? "selected" : ""}>${option}</option>`).join("")}
+        </select>
+      </label>
+
+      <label>
+        Informasi Perpanjang
+        <select data-action="extension-status">
+          <option value="" ${!room.extensionStatus ? "selected" : ""}>Belum ditentukan</option>
+          <option value="Lanjut" ${room.extensionStatus === "Lanjut" ? "selected" : ""}>Lanjut (re-rent)</option>
+          <option value="Stop" ${room.extensionStatus === "Stop" ? "selected" : ""}>Stop (akan Available)</option>
         </select>
       </label>
 
@@ -1568,7 +1586,7 @@ function deleteDebtById(debtId) {
   });
 }
 
-const TRACKABLE_ROOM_FIELDS = ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "paymentDueDate", "paymentStatus", "notes"];
+const TRACKABLE_ROOM_FIELDS = ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "paymentDueDate", "paymentStatus", "notes", "extensionStatus"];
 
 function updateSelectedRoom(updater) {
   const monthData = activeMonthData();
@@ -1683,6 +1701,7 @@ detailPanel.addEventListener("change", (event) => {
     if (action === "check-out-date") updated.checkOutDate = event.target.value;
     if (action === "payment") updated.paymentStatus = event.target.value;
     if (action === "room-status") updated.roomStatus = event.target.value;
+    if (action === "extension-status") updated.extensionStatus = event.target.value;
     return updated;
   });
 });
@@ -1713,7 +1732,7 @@ detailPanel.addEventListener("click", (event) => {
     monthData.rooms = monthData.rooms.map((room) => {
       if (room.id !== selectedRoomId) return room;
       const editedFields = new Set(Array.isArray(room._userEditedFields) ? room._userEditedFields : []);
-      ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "paymentDueDate", "paymentStatus", "notes"].forEach((field) => editedFields.delete(field));
+      ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "paymentDueDate", "paymentStatus", "notes", "extensionStatus"].forEach((field) => editedFields.delete(field));
       return { ...room, _userEditedFields: [...editedFields] };
     });
     saveState();
