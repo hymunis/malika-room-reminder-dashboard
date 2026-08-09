@@ -19,7 +19,8 @@ const roomStatusOptions = ["Terisi", "Kosong", "Renovasi/Upgrade", "Maintenance"
 const debtCategoryOptions = ["Biaya Internet", "Pembelian Barang", "Pembayaran Jasa", "Lainnya"];
 const baseFacilityTasks = [
   { id: "clean-water-tank", title: "Cleaning Torn Air" },
-  { id: "clean-fridge", title: "Cleaning Kulkas" },
+  { id: "clean-fridge-lt1", title: "Cleaning Kulkas Lantai 1 (Toshiba)" },
+  { id: "clean-fridge-lt2", title: "Cleaning Kulkas Lantai 2 (LG)" },
   { id: "buy-water-gallons", title: "Pembelian Air Galon" },
   { id: "buy-kitchen-gas-3kg", title: "Pembelian Gas Dapur 3 Kg" },
   { id: "buy-kitchen-gas-5kg", title: "Pembelian Gas Dapur 5 Kg" }
@@ -271,7 +272,8 @@ function configuredRoomProfile(baseRoom, roomRates = defaultRoomRates, roomTypeO
 function normalizeFacilityTasks(tasks = []) {
   return baseFacilityTasks.map((baseTask) => {
     const legacyGasTask = baseTask.id === "buy-kitchen-gas-3kg" ? tasks.find((task) => task.id === "buy-kitchen-gas") : null;
-    const savedTask = tasks.find((task) => task.id === baseTask.id) || legacyGasTask || {};
+    const legacyFridgeTask = baseTask.id === "clean-fridge-lt1" ? tasks.find((task) => task.id === "clean-fridge") : null;
+    const savedTask = tasks.find((task) => task.id === baseTask.id) || legacyGasTask || legacyFridgeTask || {};
     return {
       ...baseTask,
       lastCompletedDate: savedTask.lastCompletedDate || "",
@@ -491,7 +493,11 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates 
     !currentRoom.checkInDate &&
     !currentRoom.paymentDueDate &&
     normalizeRoomPaymentStatus(currentRoom.paymentStatus || roomProfile.paymentStatus) === normalizeRoomPaymentStatus(roomProfile.paymentStatus);
-  const roomScheme = roomProfile.type === "Plus Room" && isGeneratedBlankRoom
+  const editedFields = new Set(Array.isArray(currentRoom._userEditedFields) ? currentRoom._userEditedFields : []);
+  const hasEditTracking = Array.isArray(currentRoom._userEditedFields);
+  const canRefresh = (field) => hasEditTracking && !editedFields.has(field);
+
+  const roomScheme = roomProfile.type === "Plus Room" && (isGeneratedBlankRoom || canRefresh("scheme"))
     ? configuredSchemeForRoom(roomProfile, previousRoom.scheme || currentRoom.scheme)
     : configuredSchemeForRoom(roomProfile, currentRoom.scheme || previousRoom.scheme);
   const pricedRoomProfile = {
@@ -508,15 +514,38 @@ function mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, roomRates 
     hasAc: pricedRoomProfile.hasAc,
     notes: [...(currentRoom.notes || [])]
   };
+  if (hasEditTracking) {
+    room._userEditedFields = [...editedFields];
+  }
 
-  if (!room.residentName && previousRoom.residentName) room.residentName = previousRoom.residentName;
-  if (!room.checkOutDate && previousRoom.checkOutDate) room.checkOutDate = previousRoom.checkOutDate;
-  if (isGeneratedBlankRoom && !currentRoom.roomStatus && previousRoom.roomStatus) {
+  if (canRefresh("residentName") && previousRoom.residentName !== undefined) {
+    room.residentName = previousRoom.residentName;
+  } else if (!room.residentName && previousRoom.residentName) {
+    room.residentName = previousRoom.residentName;
+  }
+
+  if (canRefresh("checkInDate") && previousRoom.checkInDate !== undefined) {
+    room.checkInDate = previousRoom.checkInDate;
+  }
+
+  if (canRefresh("checkOutDate") && previousRoom.checkOutDate !== undefined) {
+    room.checkOutDate = previousRoom.checkOutDate;
+  } else if (!room.checkOutDate && previousRoom.checkOutDate) {
+    room.checkOutDate = previousRoom.checkOutDate;
+  }
+
+  if (canRefresh("roomStatus") && previousRoom.roomStatus) {
+    room.roomStatus = previousRoom.roomStatus;
+  } else if (isGeneratedBlankRoom && !currentRoom.roomStatus && previousRoom.roomStatus) {
     room.roomStatus = previousRoom.roomStatus;
   }
-  if (!room.notes.length && previousRoom.notes?.length) {
+
+  if (canRefresh("notes") && Array.isArray(previousRoom.notes)) {
+    room.notes = [...previousRoom.notes];
+  } else if (!room.notes.length && previousRoom.notes?.length) {
     room.notes = [...previousRoom.notes];
   }
+
   if (isGeneratedBlankRoom && (!currentRoom.paymentStatus || currentRoom.paymentStatus === pricedRoomProfile.paymentStatus)) {
     room.paymentStatus = "Belum Bayar";
   }
@@ -545,10 +574,26 @@ function createCarriedRoom(baseRoom, previousRoom, roomRates = defaultRoomRates,
 }
 
 function findPreviousCarryMonthKey(monthKey) {
+  const calendarPrev = getCalendarPreviousMonthKey(monthKey);
+  if (calendarPrev && state.monthlyData?.[calendarPrev]) {
+    return calendarPrev;
+  }
   return Object.keys(state.monthlyData || {})
     .filter((key) => key < monthKey && monthHasCarryContext(state.monthlyData[key]))
     .sort()
     .pop() || findPreviousMonthKey(monthKey);
+}
+
+function getCalendarPreviousMonthKey(monthKey) {
+  if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) return "";
+  const year = Number(monthKey.slice(0, 4));
+  const month = Number(monthKey.slice(5, 7));
+  if (month === 1) {
+    const prevYear = year - 1;
+    if (prevYear < firstTrackingYear) return "";
+    return `${prevYear}-12`;
+  }
+  return `${year}-${String(month - 1).padStart(2, "0")}`;
 }
 
 function findPreviousMonthKey(monthKey) {
@@ -902,6 +947,10 @@ function renderDetail() {
       <span class="pill ${pillTone(room.paymentStatus)}">${room.paymentStatus}</span>
     </div>
 
+    ${isViewMode ? "" : `<div class="detail-sync-row">
+      <button class="small-button ghost-button" type="button" id="resyncRoomBtn" title="Ambil ulang data penghuni, status kamar, check-out, dan catatan dari bulan sebelumnya untuk kamar ini.">Sinkron ulang dari bulan sebelumnya</button>
+    </div>`}
+
     <div class="detail-grid">
       <div class="info-tile">
         <span>Penghuni</span>
@@ -1190,7 +1239,8 @@ function renderAcServiceTasks() {
 function facilityThemeClass(taskId) {
   const themes = {
     "clean-water-tank": "facility-theme-water-tank",
-    "clean-fridge": "facility-theme-fridge",
+    "clean-fridge-lt1": "facility-theme-fridge",
+    "clean-fridge-lt2": "facility-theme-fridge",
     "buy-water-gallons": "facility-theme-gallons",
     "buy-kitchen-gas-3kg": "facility-theme-gas",
     "buy-kitchen-gas-5kg": "facility-theme-gas"
@@ -1460,11 +1510,23 @@ function deleteDebtById(debtId) {
   });
 }
 
+const TRACKABLE_ROOM_FIELDS = ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "paymentDueDate", "paymentStatus", "notes"];
+
 function updateSelectedRoom(updater) {
   const monthData = activeMonthData();
   monthData.rooms = monthData.rooms.map((room) => {
     if (room.id !== selectedRoomId) return room;
-    return updater(room);
+    const updatedRoom = updater(room);
+    const editedFields = new Set(Array.isArray(room._userEditedFields) ? room._userEditedFields : []);
+    TRACKABLE_ROOM_FIELDS.forEach((field) => {
+      if (JSON.stringify(room[field] ?? null) !== JSON.stringify(updatedRoom[field] ?? null)) {
+        editedFields.add(field);
+      }
+    });
+    return {
+      ...updatedRoom,
+      _userEditedFields: [...editedFields]
+    };
   });
   render();
 }
@@ -1569,6 +1631,29 @@ detailPanel.addEventListener("change", (event) => {
 
 detailPanel.addEventListener("click", (event) => {
   if (isViewMode) return;
+
+  if (event.target.id === "resyncRoomBtn") {
+    const monthKey = monthSelect.value || state.selectedMonth || defaultMonthKey;
+    const prevKey = getCalendarPreviousMonthKey(monthKey);
+    if (!prevKey || !state.monthlyData[prevKey]) {
+      window.alert("Belum ada data bulan sebelumnya untuk kamar ini.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Ambil ulang data penghuni, status kamar, check-out, dan catatan kamar ${selectedRoomId} dari bulan sebelumnya?\n\nCatatan pembayaran dan tanggal bayar bulan ini tidak akan berubah.`
+    );
+    if (!confirmed) return;
+
+    const monthData = activeMonthData();
+    monthData.rooms = monthData.rooms.map((room) => {
+      if (room.id !== selectedRoomId) return room;
+      const editedFields = new Set(Array.isArray(room._userEditedFields) ? room._userEditedFields : []);
+      ["residentName", "checkInDate", "checkOutDate", "roomStatus", "scheme", "notes"].forEach((field) => editedFields.delete(field));
+      return { ...room, _userEditedFields: [...editedFields] };
+    });
+    render();
+    return;
+  }
 
   const editNoteButton = event.target.closest("[data-edit-note]");
   if (editNoteButton) {
