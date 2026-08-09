@@ -360,6 +360,7 @@ function normalizeMonthData(monthData, monthKey, roomRates = defaultRoomRates, r
     bookings: Array.isArray(monthData.bookings) ? monthData.bookings.map(normalizeBooking) : migrateRoomBookings(monthData.rooms || []),
     expenses: Array.isArray(monthData.expenses) ? monthData.expenses : seedExpenses(monthKey),
     debts: Array.isArray(monthData.debts) ? monthData.debts.map(normalizeDebt) : [],
+    deletedBookingIds: Array.isArray(monthData.deletedBookingIds) ? monthData.deletedBookingIds : [],
     carriedContextFrom: monthData.carriedContextFrom || ""
   };
 }
@@ -483,7 +484,17 @@ function hydrateCarriedRoomContext(monthKey, monthData) {
     const previousRoom = (previousData.rooms || []).find((room) => room.id === baseRoom.id) || {};
     return mergeCarriedRoomContext(baseRoom, currentRoom, previousRoom, monthKey, state.roomRates, state.roomTypeOverrides);
   });
+  monthData.bookings = mergeCarriedBookings(monthData.bookings || [], previousData.bookings || [], monthData.deletedBookingIds || []);
   monthData.carriedContextFrom = previousKey;
+}
+
+function mergeCarriedBookings(currentBookings, previousBookings, deletedIds = []) {
+  const currentIds = new Set((currentBookings || []).map((booking) => booking.id));
+  const deletedSet = new Set(deletedIds);
+  const carriedBookings = (previousBookings || [])
+    .filter((booking) => booking.id && !currentIds.has(booking.id) && !deletedSet.has(booking.id))
+    .map((booking) => normalizeBooking({ ...booking }));
+  return [...carriedBookings, ...currentBookings];
 }
 
 function transposePaymentDueDate(previousDueDate, currentMonthKey) {
@@ -1193,7 +1204,7 @@ function renderFacilityTasks() {
         </div>`}
         ${isViewMode ? "" : `<div class="facility-footer">
           <small>${task.history.length ? `${task.history.length} penyelesaian tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat penyelesaian"}</small>
-          <button class="small-button" type="button" data-complete-facility="${task.id}">Tandai Selesai Hari Ini</button>
+          <button class="small-button" type="button" data-complete-facility="${task.id}">Submit</button>
         </div>`}
         ${renderHistoryList(task, "facility", "Riwayat selesai")}
       </article>
@@ -1230,7 +1241,7 @@ function renderAcServiceTasks() {
         </div>`}
         ${isViewMode ? "" : `<div class="facility-footer">
           <small>${task.history.length ? `${task.history.length} service tercatat · Terakhir ${formatDate(task.history[0])}` : "Belum ada riwayat service"}</small>
-          <button class="small-button" type="button" data-complete-ac-service="${task.id}">Tandai Selesai Hari Ini</button>
+          <button class="small-button" type="button" data-complete-ac-service="${task.id}">Submit</button>
         </div>`}
         ${renderHistoryList(task, "ac-service", "Riwayat service")}
       </article>
@@ -1346,20 +1357,20 @@ function renderBookings() {
         </div>
         <div class="booking-payment-stack">
           ${isViewMode ? `
-          <span class="mini-status">${booking.dpPaid ? "Lunas" : "Belum lunas"} · DP ${formatCurrency(booking.dpAmount)}</span>
-          <span class="mini-status">${booking.payment1Paid ? "Lunas" : "Belum lunas"} · Payment 1 ${formatCurrency(booking.payment1Amount)}</span>
-          <span class="mini-status">${booking.payment2Paid ? "Lunas" : "Belum lunas"} · Payment 2 ${formatCurrency(booking.payment2Amount)}</span>
+          <span class="mini-status">${booking.dpPaid ? "Lunas" : "Belum lunas"} · Bayar ke-1 ${formatCurrency(booking.dpAmount)}</span>
+          <span class="mini-status">${booking.payment1Paid ? "Lunas" : "Belum lunas"} · Bayar ke-2 ${formatCurrency(booking.payment1Amount)}</span>
+          <span class="mini-status">${booking.payment2Paid ? "Lunas" : "Belum lunas"} · Bayar ke-3 ${formatCurrency(booking.payment2Amount)}</span>
           ` : `<label class="mini-check">
             <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="dpPaid" ${booking.dpPaid ? "checked" : ""}>
-            DP ${formatCurrency(booking.dpAmount)}
+            Bayar ke-1 ${formatCurrency(booking.dpAmount)}
           </label>
           <label class="mini-check">
             <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="payment1Paid" ${booking.payment1Paid ? "checked" : ""}>
-            Payment 1 ${formatCurrency(booking.payment1Amount)}
+            Bayar ke-2 ${formatCurrency(booking.payment1Amount)}
           </label>
           <label class="mini-check">
             <input type="checkbox" data-toggle-booking="${booking.id}" data-payment-field="payment2Paid" ${booking.payment2Paid ? "checked" : ""}>
-            Payment 2 ${formatCurrency(booking.payment2Amount)}
+            Bayar ke-3 ${formatCurrency(booking.payment2Amount)}
           </label>`}
           <strong>Terbayar ${formatCurrency(totalPaid)}</strong>
           <small>Total tagihan ${formatCurrency(totalAmount)}</small>
@@ -1745,11 +1756,17 @@ facilityTaskList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-complete-facility]");
   if (!button) return;
 
-  const completedDate = localDateString(new Date());
-  state.facilityTasks = state.facilityTasks.map((task) => {
-    if (task.id !== button.dataset.completeFacility) return task;
-    const history = task.history[0] === completedDate ? task.history : [completedDate, ...task.history];
-    return { ...task, lastCompletedDate: completedDate, history };
+  const taskId = button.dataset.completeFacility;
+  const task = state.facilityTasks.find((t) => t.id === taskId);
+  const completedDate = task?.lastCompletedDate || localDateString(new Date());
+  if (!completedDate) {
+    window.alert("Isi tanggal Terakhir Selesai terlebih dahulu sebelum submit.");
+    return;
+  }
+  state.facilityTasks = state.facilityTasks.map((t) => {
+    if (t.id !== taskId) return t;
+    const history = t.history[0] === completedDate ? t.history : [completedDate, ...t.history];
+    return { ...t, lastCompletedDate: completedDate, history };
   });
   render();
 });
@@ -1801,12 +1818,18 @@ acServiceTaskList.addEventListener("click", (event) => {
   const completeButton = event.target.closest("[data-complete-ac-service]");
   if (!completeButton) return;
 
-  const completedDate = localDateString(new Date());
-  state.acServiceTasks = state.acServiceTasks.map((task) => {
-    if (task.id !== completeButton.dataset.completeAcService) return task;
-    const history = task.history[0] === completedDate ? task.history : [completedDate, ...task.history];
+  const taskId = completeButton.dataset.completeAcService;
+  const task = state.acServiceTasks.find((t) => t.id === taskId);
+  const completedDate = task?.lastCompletedDate || localDateString(new Date());
+  if (!completedDate) {
+    window.alert("Isi tanggal Terakhir Service terlebih dahulu sebelum submit.");
+    return;
+  }
+  state.acServiceTasks = state.acServiceTasks.map((t) => {
+    if (t.id !== taskId) return t;
+    const history = t.history[0] === completedDate ? t.history : [completedDate, ...t.history];
     return {
-      ...task,
+      ...t,
       isCompleted: true,
       lastCompletedDate: completedDate,
       history
@@ -1860,7 +1883,10 @@ bookingList.addEventListener("click", (event) => {
   const deleteButton = event.target.closest("[data-delete-booking]");
   if (!deleteButton) return;
 
-  activeMonthData().bookings = activeMonthData().bookings.filter((booking) => booking.id !== deleteButton.dataset.deleteBooking);
+  const monthData = activeMonthData();
+  const deletedId = deleteButton.dataset.deleteBooking;
+  monthData.bookings = monthData.bookings.filter((booking) => booking.id !== deletedId);
+  monthData.deletedBookingIds = Array.from(new Set([...(monthData.deletedBookingIds || []), deletedId]));
   render();
 });
 
